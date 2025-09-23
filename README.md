@@ -31,10 +31,10 @@ The pipeline supports multiple architectures (**ResNet, VGG, DenseNet, Efficient
 
 - Trained models are automatically stored in timestamped directories under [`cnn/outputs/models`](./cnn/outputs/models)
 - Ancillary outputs were generated including:  
--- Grad-CAM visualizations 
--- Metrics (accuracy, precision, recall, F1)  
--- Confusion matrices  
--- Loss and accuracy, precsion, recall plots vs epochs  
+  -- Grad-CAM visualizations
+  -- Metrics (accuracy, precision, recall, F1)  
+  -- Confusion matrices  
+  -- Loss and accuracy, precsion, recall plots vs epochs  
 
 The plots are generated within  [`plots`](./plots) subfolder of corresponding timestamped [`cnn/outputs/models`](./cnn/outputs/models) folder
 
