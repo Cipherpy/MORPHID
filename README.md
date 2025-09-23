@@ -38,7 +38,7 @@ The pipeline supports multiple architectures (**ResNet, VGG, DenseNet, Efficient
   - Confusion matrices  
   - Loss, accuracy, precision, and recall curves across epochs  
 
-- All plots are saved in the [`plots`](./cnn/outputs/plots) subfolder within the corresponding timestamped output directory.  
+All plots are saved in the [`plots`](./cnn/outputs/plots) subfolder within the corresponding timestamped output directory.  
 
 
 
