@@ -29,6 +29,6 @@ The pipeline supports multiple architectures (**ResNet, VGG, DenseNet, Efficient
 
 ### Outputs and Reproducibility  
 
-- Trained models are automatically stored in timestamped directories under [`cnn/`](./cnn/)
+- Trained models are automatically stored in timestamped directories under [`cnn/outputs/models`](./cnn/outputs/models)
 
 
