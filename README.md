@@ -19,3 +19,15 @@ A typical training run can be executed as:
 ```bash
 python -m cnn.scripts.main --mode train --model resnet50 --data_dir ./cnn/dataset
 
+### Hyperparameters  
+Hyperparameters such as **learning rate**, **batch size**, **optimizer**, and **input resolution** are configurable via [`cnn/scripts/main.py`](./cnn/scripts/main.py).  
+
+The pipeline supports multiple architectures (**ResNet, VGG, DenseNet, EfficientNet**, etc.) for comparative benchmarking.  
+
+---
+
+### Outputs and Reproducibility  
+
+- Trained models are automatically stored in timestamped directories under [`cnn/`](./cnn/)
+
+
