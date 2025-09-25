@@ -53,6 +53,41 @@ The pipeline supports multiple architectures (**ResNet, VGG, DenseNet, Efficient
 
 All plots are saved in the [`plots`](./cnn/outputs/plots) subfolder within the corresponding timestamped output directory.  
 
+## Stage II — OOD Robustness and Generalization  
+
+To assess the **robustness of the baseline CNN models (Stage I)** under **open-set conditions**, we performed **out-of-distribution (OOD) detection**. The implementation uses **softmax confidence scoring** provided in [`cnn/core/ood.py`](./cnn/core/ood.py).  
+
+---
+
+### OOD Detection Protocol  
+
+The OOD evaluation requires three inputs:  
+
+1. **ID test set directory** — contains in-distribution otolith images.  
+2. **OOD root directory** — contains multiple OOD subsets (e.g., deepsea, shallow marine, freshwater).  
+3. **Checkpoint directory** — stores the finetuned CNN model weights.  
+
+Example command:  
+
+```bash
+python cnn/scripts/ood_eval.py \
+  --id-dir <path_to_test_set> \
+  --ood-root <path_to_ood_subsets> \
+  --ckpt-dir <path_to_model_checkpoint>
+
+
+### OOD Detection Results  
+
+All metrics and reports are saved in the corresponding timestamped output folder:  
+[`cnn/outputs/<timestamp>/ood/`](./cnn/outputs/)  
+
+The outputs include:  
+- 📊 **Confidence histograms** (ID vs OOD distributions)  
+- 📈 **ROC and PR curves** for OOD detection performance  
+- 🧮 **Evaluation metrics**: AUROC, AUPR (In/Out), FPR  
+- 📂 **Per-subset statistics** for each OOD category (e.g., *deepsea*, *shallow marine*, *freshwater*)  
+ 
+
 
 
 
