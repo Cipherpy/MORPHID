@@ -214,7 +214,7 @@ An example otolith image with annotated regions is shown below:
 - **Species predictions** linked to morphological descriptions.  
 - **Feature-aligned CSVs** for reproducibility of experiments.  
 
-### Example (Simplified)  
+### Example (Ground Truth)  
 
 <p align="center">
   <img src="./Captioning/assets/AI 1R 0.75.jpg" alt="Annotated Otolith with Morphological Regions" width="600"/>
@@ -233,3 +233,19 @@ An example otolith image with annotated regions is shown below:
 
 ---
 
+###  VLM Finetuning (Gemma-3) for Morphological Captioning & Species Prediction
+
+Finetune **Gemma-3 Vision** to generate **taxonomic morphological descriptions** and the **species prediction** for each otolith image.  
+Reference implementation: Gemma docs — *Hugging Face Vision Finetune with QLoRA*  
+👉 https://ai.google.dev/gemma/docs/core/huggingface_vision_finetune_qlora
+
+### Code & Prompts
+- Finetuning script: [`./Captioning/gemma/train.py`](./Captioning/gemma/train.py)  
+- Prompt templates:
+  - System prompts: [`./Captioning/prompts/system/`](./Captioning/prompts/system/)
+  - User prompts:   [`./Captioning/prompts/user/`](./Captioning/prompts/user/)
+
+**Target features in captions:** *sulcus acusticus, ostium, cauda, posterior region, anterior region*  
+**Output:** structured caption + species label.
+
+---
