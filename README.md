@@ -146,9 +146,8 @@ In addition to **confidence-based OOD detection**, we implemented **distance-bas
 
 ### Outputs  
 
-- `embedding_metrics_id_ood.csv` → Numerical summary of OOD distances.  
-Plots generated:  
-- Embedding distributions (ID vs OOD)  
+- `embedding_metrics_id_ood.csv` → Numerical summary of OOD distances.   
+- Embedding distributions plot (ID vs OOD)  
 - Score distribution curves   
 
 Example outputs (distance-based OOD scoring):  
