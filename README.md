@@ -186,3 +186,38 @@ An example otolith image with annotated regions is shown below:
 </p>  
 
 ---
+
+### Data Preparation  
+
+- Input data are stored in the [`Captioning/text_data/`](./Captioning/text_data) folder.  
+- Each sample (train, test, OOD) has a corresponding **feature file** describing the morphological regions.  
+
+**Initial format:**  
+- Provided as `.xlsx` spreadsheets.  
+
+**Preprocessing:**  
+- Run [`notebooks/stats.ipynb`](./notebooks/stats.ipynb) to clean and standardize the feature files.  
+  - Align feature rows with images in the dataset folder.  
+  - Remove missing files and redundant entries.  
+  - Export a **modified `.csv` file** containing the cleaned feature descriptions.  
+
+**Final format:**  
+- Cleaned `.csv` files are used as input for VLM training and evaluation.  
+
+---
+
+### Outputs  
+
+- **Generated captions** describing the morphology of otoliths.  
+- **Species predictions** linked to morphological descriptions.  
+- **Feature-aligned CSVs** for reproducibility of experiments.  
+
+Example (simplified): 
+
+
+
+
+---
+
+📊 **Interpretation**:  
+Morphological captioning provides **explainable taxonomic insights**, bridging the gap between visual features and species-level identification. This stage integrates **image features, structured annotations, and text outputs**, moving towards interpretable and human-aligned AI for marine taxonomy.  
