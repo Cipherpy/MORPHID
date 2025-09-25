@@ -78,7 +78,7 @@ python cnn/scripts/ood_eval.py \
 ### OOD Detection Results  
 
 All metrics and reports are saved in the corresponding timestamped output folder:  
-[`cnn/outputs/<timestamp>/ood/`](./cnn/outputs/)  
+[`cnn/outputs/<timestamp>/models/`](./cnn/outputs/models/)  
 
 The outputs include:  
 - 📊 **Confidence histograms** (ID vs OOD distributions)  
