@@ -1,0 +1,23 @@
+{
+  "deepsea": {
+    "n_images": 113,
+    "TPR_OOD": 0.283,
+    "avg_conf": 0.671
+  },
+  "shallow_marine": {
+    "n_images": 473,
+    "TPR_OOD": 0.186,
+    "avg_conf": 0.82
+  },
+  "freshwater": {
+    "n_images": 20,
+    "TPR_OOD": 0.0,
+    "avg_conf": 0.975
+  },
+  "Avg_conf_ID": 0.969,
+  "FPR_ID": 0.003,
+  "AUROC": 0.487,
+  "AUPR_In": 0.657,
+  "AUPR_Out": 0.301,
+  "tau": 0.5
+}

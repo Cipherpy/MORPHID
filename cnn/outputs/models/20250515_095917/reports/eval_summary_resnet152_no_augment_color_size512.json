@@ -1,0 +1,21 @@
+{
+    "model": "resnet152",
+    "image_size": 512,
+    "augmentation": false,
+    "grayscale": false,
+    "test_accuracy": 0.9414519906323185,
+    "test_precision": 0.9652922652568671,
+    "test_recall": 0.9609090127278981,
+    "test_f1": 0.9525964757222373,
+    "test_precision_micro": 0.9414519906323185,
+    "test_recall_micro": 0.9414519906323185,
+    "test_f1_micro": 0.9414519906323185,
+    "top1_accuracy": 0.9414519906323185,
+    "top5_accuracy": 0.9976580796252927,
+    "avg_inference_time": 0.2708389191400437,
+    "total_inference_time": 5.687617301940918,
+    "samples_per_second": 225.22612405072587,
+    "batch_size": 64,
+    "test_samples": 1281,
+    "evaluation_time": 248.95014333724976
+}
