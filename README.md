@@ -162,3 +162,27 @@ Example outputs (distance-based OOD scoring):
 - Distance-based OOD methods (Mahalanobis, PCA residual, k-NN) provide complementary information to raw confidence scores.  
 - Visualizations highlight clearer separation between **ID** and **OOD embeddings**, but robustness varies by subset (deepsea, shallow marine, freshwater).  
 
+## Stage III — Morphological Captioning (VLMs)  
+
+In this stage, we extend beyond classification and OOD detection by generating **morphological descriptions of otoliths in a taxonomic framework** using **vision–language models (VLMs)**.  
+The descriptions focus on diagnostic features critical for species identification:  
+
+- **Sulcus acusticus**  
+- **Ostium**  
+- **Cauda**  
+- **Posterior region**  
+- **Anterior region**  
+
+The VLMs not only describe these regions but also predict the **fish species** to which the otolith belongs.  
+
+---
+
+### Morphological Annotation  
+
+An example otolith image with annotated regions is shown below:  
+
+<p align="center">
+  <img src="./Captioning/assets/gt_otolith.jpg" alt="Annotated Otolith with Morphological Regions" width="600"/>
+</p>  
+
+---
