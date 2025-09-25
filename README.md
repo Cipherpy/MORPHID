@@ -245,7 +245,26 @@ Reference implementation: Gemma docs — *Hugging Face Vision Finetune with QLoR
   - System prompts: [`./Captioning/prompts/system/`](./Captioning/prompts/system/)
   - User prompts:   [`./Captioning/prompts/user/`](./Captioning/prompts/user/)
 
+
+### VLM Finetuning (LLaMA-3.2 Vision, Unsloth)
+
+In parallel to Gemma-3, we finetune **LLaMA-3.2 Vision** using **Unsloth** for
+(1) **morphological captioning** of otoliths and
+(2) **species prediction**.
+
+**References (method guides):**
+- DataCamp tutorial: https://www.datacamp.com/tutorial/fine-tuning-llama-3-2-vision
+- Kaggle notebook (Unsloth): https://www.kaggle.com/code/danielhanchen/llama-3-2-vision-finetuning-unsloth-kaggle
+
+### Code & Layout
+- Finetuning script: [`Captioning/llama/train_llama.py`](./Captioning/llama/train_llama.py)  
+- Evaluation script: [`Captioning/llama/test_data.py`](./Captioning/llama/test_data.py)  
+- Prompts (reuse taxonomy prompts if desired): [`Captioning/prompts/`](./Captioning/prompts/)
+
+
+
 **Target features in captions:** *sulcus acusticus, ostium, cauda, posterior region, anterior region*  
 **Output:** structured caption + species label.
 
 ---
+
