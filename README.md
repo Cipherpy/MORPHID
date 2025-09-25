@@ -165,6 +165,8 @@ Example outputs (distance-based OOD scoring):
 ## Stage III — Morphological Captioning (VLMs)  
 
 In this stage, we extend beyond classification and OOD detection by generating **morphological descriptions of otoliths in a taxonomic framework** using **vision–language models (VLMs)**.  
+Morphological captioning provides **explainable taxonomic insights**, bridging the gap between visual features and species-level identification. This stage integrates **image features, structured annotations, and text outputs**, moving towards interpretable and human-aligned AI for marine taxonomy.  
+
 The descriptions focus on diagnostic features critical for species identification:  
 
 - **Sulcus acusticus**  
@@ -212,12 +214,21 @@ An example otolith image with annotated regions is shown below:
 - **Species predictions** linked to morphological descriptions.  
 - **Feature-aligned CSVs** for reproducibility of experiments.  
 
-Example (simplified): 
+### Example (Simplified)  
 
+<p align="center">
+  <img src="./Captioning/assets/AI_1R_0.75.png" alt="Annotated Otolith with Morphological Regions" width="550"/>
+</p>  
 
-
+<blockquote>
+<b>Type:</b> Sagittal  
+<b>Side:</b> Right otolith  
+<b>Shape:</b> Fusiform; sinuate to entire dorsal and entire ventral margins  
+<b>Sulcus acusticus:</b> Heterosulcoid, ostial, median  
+<b>Ostium:</b> Tubular; longer than cauda  
+<b>Cauda:</b> Tubular, straight  
+<b>Anterior region:</b> Angled; rostrum defined, blunt; antirostrum poorly defined or blunt; excisura moderately wide with acute shallow notch  
+</blockquote>
 
 ---
 
-📊 **Interpretation**:  
-Morphological captioning provides **explainable taxonomic insights**, bridging the gap between visual features and species-level identification. This stage integrates **image features, structured annotations, and text outputs**, moving towards interpretable and human-aligned AI for marine taxonomy.  
