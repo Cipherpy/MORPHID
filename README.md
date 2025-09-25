@@ -59,7 +59,7 @@ To assess the **robustness of the baseline CNN models (Stage I)** under **open-s
 
 ---
 
-### OOD Detection Protocol  
+### OOD Detection (based on model confidence)  
 
 The OOD evaluation requires three input directories:  
 
@@ -106,7 +106,58 @@ The outputs include:
 - 🧮 **Evaluation metrics**: AUROC, AUPR (In/Out), FPR  
 - 📂 **Per-subset statistics** for each OOD category (e.g., *deepsea*, *shallow marine*, *freshwater*)  
  
+## Stage II — OOD Robustness and Generalization  
 
+In addition to **confidence-based OOD detection**, we implemented **distance-based detection** methods using CNN embedding features.  
 
+---
 
+### Embedding-Based OOD Detection  
+
+1. **Feature extraction**  
+   - Embeddings are extracted from the penultimate CNN layer.  
+   - Scripts: [`cnn/scripts/ood_distance.py`](./cnn/scripts/ood_distance.py)  
+
+2. **Distance-based OOD metrics**  
+   The following metrics are computed for each OOD sample:  
+   - **Mahalanobis minimum distance** (`ood_maha_min`)  
+   - **PCA residuals** (`ood_residual`)  
+   - **k-NN mean distance** (`ood_knn_mean`)  
+
+   All metrics are aggregated into a CSV file:  [`cnn/outputs/<timestamp>/models/embedding_metrics_id_ood.csv`](./cnn/outputs/<timestamp>/models/embedding_metrics_id_ood.csv)  
+
+3. **Metric computation and visualization**  
+- Script: [`cnn/scripts/embedding_ood_cal.py`](./cnn/scripts/embedding_ood_cal.py)  
+- Generates numerical results and comparison plots.  
+
+4. **Score distribution plots**  
+- Script: [`cnn/scripts/ood_score_plot.py`](./cnn/scripts/ood_score_plot.py)  
+- Visualizes OOD scores across ID vs OOD samples.  
+
+5. **Embedding visualization**  
+- 2D/3D visualizations of feature embeddings.  
+- Scripts:  
+  - [`cnn/scripts/embeddings_visualisation.py`](./cnn/scripts/embeddings_visualisation.py)  saved in [`cnn/outputs/<timestamp>/plots/embeddings_visualisation.png`](./cnn/outputs/<timestamp>/plots/embeddings_visualisation.png)
+  - [`cnn/scripts/embedding_3d.py`](./cnn/scripts/embedding_3d.py) saved in [`cnn/outputs/<timestamp>/plots/ood_id_separation_3d.png`](./cnn/outputs/<timestamp>/plots/ood_id_separation_3d.png)  
+
+---
+
+### Outputs  
+
+- `embedding_metrics_id_ood.csv` → Numerical summary of OOD distances.  
+- Plots generated:  
+- Embedding distributions (ID vs OOD)  
+- Score distribution curves   
+
+Example outputs (distance-based OOD scoring):  
+
+| <img src="./cnn/outputs/models/20250515_095917/plots/ood_id_separation_3d.png" alt="ID-OOD separation (3D)" width="400"/> | <img src="./cnn/outputs/models/20250515_095917/plots/tsne_embeddings_black.png" alt="t-sne Embedding" width="400"/> |
+|:------------------------------------------:|:------------------------------------------:|
+| **ID-OOD separation (3D)**                   | **t-sne Embedding**                         | 
+
+---
+
+📊 **Interpretation**:  
+- Distance-based OOD methods (Mahalanobis, PCA residual, k-NN) provide complementary information to raw confidence scores.  
+- Visualizations highlight clearer separation between **ID** and **OOD embeddings**, but robustness varies by subset (deepsea, shallow marine, freshwater).  
 
