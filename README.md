@@ -95,7 +95,7 @@ python cnn/scripts/ood.py \
   --ood-root <path_to_ood_subsets> \
   --ckpt-dir <path_to_model_checkpoint>
 ```
-### OOD Detection Results  
+#### OOD Detection Results  
 
 All metrics and reports are saved in the corresponding timestamped output folder:  
 [`cnn/outputs/<timestamp>/models/`](./cnn/outputs/models/)  
@@ -112,7 +112,7 @@ In addition to **confidence-based OOD detection**, we implemented **distance-bas
 
 --- -->
 
-### Embedding-Based OOD Detection  
+### OOD Detection (based on Embedding) 
 
 In addition to **confidence-based OOD detection**, we implemented **distance-based detection** methods using CNN embedding features. 
 
@@ -144,7 +144,7 @@ In addition to **confidence-based OOD detection**, we implemented **distance-bas
 
 ---
 
-### Outputs  
+#### Outputs  
 
 - `embedding_metrics_id_ood.csv` → Numerical summary of OOD distances.   
 - Embedding distributions plot (ID vs OOD)  
