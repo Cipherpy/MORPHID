@@ -12,16 +12,17 @@ The dataset includes representatives such as:
 
 Below are representative otolith images from the dataset:  
 
-<p align="center">
-  <img src="./cnn/assets/AD2R 1.6X.tif" alt="Minous inermis" width="700"/>
-</p>  
-<p align="center">
-  <img src="./cnn/assets/Cubiceps baxteri_Sp_1_L (24).tif" alt="Cubiceps baxteri" width="700"/>
-</p>  
-<p align="center">
-  <img src="./cnn/assets/DTR05.tif" alt="Dactyloptena tiltoni" width="700"/>
+<!-- <p align="center">
+  <img src="./cnn/assets/AD2R_1.6X.png" alt="Minous inermis" width="700"/>
 </p>  
 
+<p align="center">
+  <img src="./cnn/assets/Cubiceps_baxteri_Sp_1_L_24.png" alt="Cubiceps baxteri" width="700"/>
+</p>   -->
+
+<p align="center">
+  <img src="./cnn/assets/DTR05.png" alt="Dactyloptena tiltoni" width="700"/>
+</p>
 ---
 
 ### Dataset Organization  
