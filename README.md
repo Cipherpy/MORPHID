@@ -106,13 +106,15 @@ The outputs include:
 - 🧮 **Evaluation metrics**: AUROC, AUPR (In/Out), FPR  
 - 📂 **Per-subset statistics** for each OOD category (e.g., *deepsea*, *shallow marine*, *freshwater*)  
  
-## Stage II — OOD Robustness and Generalization  
+<!-- ## Stage II — OOD Robustness and Generalization  
 
 In addition to **confidence-based OOD detection**, we implemented **distance-based detection** methods using CNN embedding features.  
 
----
+--- -->
 
 ### Embedding-Based OOD Detection  
+
+In addition to **confidence-based OOD detection**, we implemented **distance-based detection** methods using CNN embedding features. 
 
 1. **Feature extraction**  
    - Embeddings are extracted from the penultimate CNN layer.  
@@ -145,7 +147,7 @@ In addition to **confidence-based OOD detection**, we implemented **distance-bas
 ### Outputs  
 
 - `embedding_metrics_id_ood.csv` → Numerical summary of OOD distances.  
-- Plots generated:  
+Plots generated:  
 - Embedding distributions (ID vs OOD)  
 - Score distribution curves   
 
