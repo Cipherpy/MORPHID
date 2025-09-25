@@ -12,11 +12,11 @@ The dataset includes representatives such as:
 
 Below are representative otolith images from the dataset: 
 
-| <img src="./cnn/assets/DTR05.png" alt="Dactyloptena tiltoni" width="300"/> | <img src="./cnn/assets/AJ 1 1.6.png" alt="Pterygotrigla macrorhynchus" width="300"/> |
+| <img src="./cnn/assets/DTR05.png" alt="Dactyloptena tiltoni" width="350"/> | <img src="./cnn/assets/AJ 1 1.6.png" alt="Pterygotrigla macrorhynchus" width="350"/> |
 |:------------------------------------------:|:------------------------------------------:|
 | **Dactyloptena tiltoni**                   | **Pterygotrigla macrorhynchus**                         |
 
-| <img src="./cnn/assets/Api 2 dorsal1.6x.png" alt="Apistus carinatus" width="300"/> | <img src="./cnn/assets/Chlorophthalmus acutifrons_L_sp3(6).png" alt="Chlorophthalmus acutifrons" width="300"/> |
+| <img src="./cnn/assets/Api 2 dorsal1.6x.png" alt="Apistus carinatus" width="350"/> | <img src="./cnn/assets/Chlorophthalmus acutifrons_L_sp3(6).png" alt="Chlorophthalmus acutifrons" width="350"/> |
 |:------------------------------------------:|:------------------------------------------:|
 | **Apistus carinatus**                       | **Chlorophthalmus acutifrons**                    |
 ---
