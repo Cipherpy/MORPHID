@@ -10,19 +10,15 @@ The dataset includes representatives such as:
 
 ### Dataset Samples  
 
-Below are representative otolith images from the dataset:  
+Below are representative otolith images from the dataset: 
 
-<!-- <p align="center">
-  <img src="./cnn/assets/AD2R_1.6X.png" alt="Minous inermis" width="700"/>
-</p>  
+| <img src="./cnn/assets/DTR05.png" alt="Dactyloptena tiltoni" width="300"/> | <img src="./cnn/assets/AJ 1 1.6.png" alt="Pterygotrigla macrorhynchus" width="300"/> |
+|:------------------------------------------:|:------------------------------------------:|
+| **Dactyloptena tiltoni**                   | **Pterygotrigla macrorhynchus**                         |
 
-<p align="center">
-  <img src="./cnn/assets/Cubiceps_baxteri_Sp_1_L_24.png" alt="Cubiceps baxteri" width="700"/>
-</p>   -->
-
-<p align="center">
-  <img src="./cnn/assets/DTR05.png" alt="Dactyloptena tiltoni" width="700"/>
-</p>
+| <img src="./cnn/assets/Api 2 dorsal1.6x.png" alt="Apistus carinatus" width="300"/> | <img src="./cnn/assets/Chlorophthalmus acutifrons_L_sp3(6).png" alt="Chlorophthalmus acutifrons" width="300"/> |
+|:------------------------------------------:|:------------------------------------------:|
+| **Apistus carinatus**                       | **Chlorophthalmus acutifrons**                    |
 ---
 
 ### Dataset Organization  
