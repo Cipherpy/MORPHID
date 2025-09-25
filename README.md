@@ -74,8 +74,7 @@ python cnn/scripts/ood_eval.py \
   --id-dir <path_to_test_set> \
   --ood-root <path_to_ood_subsets> \
   --ckpt-dir <path_to_model_checkpoint>
-
-
+```
 ### OOD Detection Results  
 
 All metrics and reports are saved in the corresponding timestamped output folder:  
