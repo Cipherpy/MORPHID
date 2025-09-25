@@ -61,11 +61,20 @@ To assess the **robustness of the baseline CNN models (Stage I)** under **open-s
 
 ### OOD Detection Protocol  
 
-The OOD evaluation requires three inputs:  
+The OOD evaluation requires three input directories:  
 
-1. **ID test set directory** — contains in-distribution otolith images.  
-2. **OOD root directory** — contains multiple OOD subsets (e.g., deepsea, shallow marine, freshwater).  
-3. **Checkpoint directory** — stores the finetuned CNN model weights.  
+1. **ID test set directory**  
+   Path: [`cnn/dataset/test`](./cnn/dataset/test)  
+   - Contains the in-distribution otolith test images.  
+
+2. **OOD root directory**  
+   Path: [`cnn/OOD_data`](./cnn/OOD_data)  
+   - Contains multiple OOD subsets (e.g., *deepsea*, *shallow marine*, *freshwater*).  
+
+3. **Checkpoint directory**  
+   Path: [`cnn/outputs/models`](./cnn/outputs/models)  
+   - Stores the finetuned CNN model weights.  
+
 
 Example command:  
 
