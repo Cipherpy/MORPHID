@@ -8,6 +8,22 @@ The dataset includes representatives such as:
 
 *Alepocephalus bicolor, Apistus carinatus, Brachypterois serrulata, Chlorophthalmus acutifrons, Choridactylus multibarbus, Coryphaenoides sp., Cubiceps baxteri, Dactyloptena orientalis, Dactyloptena papilio, Dactyloptena tiltoni, Ectreposbastes imus, Grammoplites suppositus, Hoplostethus sp., Lepidotrigla spiloptera, Minous dempsterae, Minous inermis, Minous trachycephalus, Neomerinthe erostris, Parascombrops pellucidus, Platycephalus indicus, Polymixia fusca, Psenopsis sp., Pterygotrigla arabica, Pterygotrigla hemisticta, Pterygotrigla macrorhynchus, Satyrichthys laticeps, Setarches guentheri, Sorsogona tuberculata, Synagrops japonicus,* and *Uranoscopus sp.*  
 
+### Dataset Samples  
+
+Below are representative otolith images from the dataset:  
+
+<p align="center">
+  <img src="./assets/AD2R 1.6X.tif" alt="Minous inermis" width="700"/>
+</p>  
+<p align="center">
+  <img src="./assets/Cubiceps baxteri_Sp_1_L (24).tif" alt="Cubiceps baxteri" width="700"/>
+</p>  
+<p align="center">
+  <img src="./assets/DTR05.tif" alt="Dactyloptena tiltoni" width="700"/>
+</p>  
+
+---
+
 ### Dataset Organization  
 - The dataset was stratified into **training**, **validation**, and **test** partitions.  
 - All data are systematically arranged in the [`/dataset/`](./cnn/dataset) directory.  
