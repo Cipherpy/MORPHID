@@ -10,7 +10,7 @@ The dataset includes representatives such as:
 
 ### Dataset Samples  
 
-Below are representative otolith images from the dataset: 
+Representative otolith images from the dataset: 
 
 | <img src="./cnn/assets/DTR05.png" alt="Dactyloptena tiltoni" width="400"/> | <img src="./cnn/assets/AJ 1 1.6.png" alt="Pterygotrigla macrorhynchus" width="400"/> |
 |:------------------------------------------:|:------------------------------------------:|
@@ -71,6 +71,17 @@ The OOD evaluation requires three input directories:
    Path: [`cnn/OOD_data`](./cnn/OOD_data)  
    - Contains multiple OOD subsets (e.g., *deepsea*, *shallow marine*, *freshwater*).  
 
+Representative OOD otolith images from the dataset: 
+
+| <img src="./cnn/OOD_data/L_AC_sp3_Image008.png" alt="Amphiprion clarki" width="400"/> | <img src="./cnn/OOD_data/L_LM_sp1Image002.png" alt="Lutjanus malabaricus" width="400"/> |
+|:------------------------------------------:|:------------------------------------------:|
+| **Amphiprion clarki**                   | **Lutjanus malabaricus**                         |
+
+| <img src="./cnn/OOD_data/L_N_N_sp3_Image001.png" alt="Nemipterus sp" width="400"/> | <img src="./cnn/OOD_data/R_sp5_Image012.png" alt="Deep sea species (Unknown)" width="400"/> |
+|:------------------------------------------:|:------------------------------------------:|
+| **Nemipterus sp.**                       | **Deep sea species (Unknown)**                    |
+---
+
 3. **Checkpoint directory**  
    Path: [`cnn/outputs/models`](./cnn/outputs/models)  
    - Stores the finetuned CNN model weights.  
@@ -79,7 +90,7 @@ The OOD evaluation requires three input directories:
 Example command:  
 
 ```bash
-python cnn/scripts/ood_eval.py \
+python cnn/scripts/ood.py \
   --id-dir <path_to_test_set> \
   --ood-root <path_to_ood_subsets> \
   --ckpt-dir <path_to_model_checkpoint>
