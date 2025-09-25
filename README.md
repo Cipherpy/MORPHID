@@ -217,7 +217,7 @@ An example otolith image with annotated regions is shown below:
 ### Example (Simplified)  
 
 <p align="center">
-  <img src="./Captioning/assets/AI_1R_0.75.jpg" alt="Annotated Otolith with Morphological Regions" width="300"/>
+  <img src="./Captioning/assets/AI 1R 0.75.jpg" alt="Annotated Otolith with Morphological Regions" width="300"/>
 </p>  
 
 <blockquote>
