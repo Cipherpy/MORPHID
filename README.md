@@ -1,7 +1,7 @@
 # MORPHID
 Morphological Feature Generation for Species Identification
 
-## Baseline  
+## Baseline (Stage I: Foundational Benchmark)
 
 As a foundational benchmark, we developed finetuned **convolutional neural network (CNN) models** on a curated dataset comprising **30 taxonomically diverse fish otolith classes**.  
 The dataset includes representatives such as:  
