@@ -307,3 +307,21 @@ After postprocessing and filtering, the final outputs of the VLMs on the test se
 - `Description`           (ground-truth morphological description)
 
 ---
+
+#### 1. Automatic morphological feature scoring
+
+- **Script:** [`otolith/eval_one.py`](./otolith/eval_one.py)  
+- **Output CSV:** `caption_scores_all.csv` in `otolith/Outputs/` for llama it is `llama_caption_scores_all.csv`
+
+This computes standard automatic metrics such as:  
+- BLEU-1/2/3/4  
+- ROUGE-L  
+
+#### 2. Classification Metrics
+
+- **Script:** [`otolith/class_metrics.py`](./otolith/class_metrics.py)  
+- **Outputs:** 
+- Text report: precision, recall, F1-score per species
+- Confusion matrix (saved as PNG/CSV)
+
+---
