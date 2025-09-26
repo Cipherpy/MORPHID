@@ -322,6 +322,6 @@ This computes standard automatic metrics such as:
 - **Script:** [`otolith/class_metrics.py`](./otolith/class_metrics.py)  
 - **Outputs:** 
   - Text report: precision, recall, F1-score per species
-  - Confusion matrix (saved as PNG/CSV)
+  - Confusion matrix (saved as PNG) in `Captioning/Outputs/`
 
 ---
