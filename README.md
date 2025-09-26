@@ -342,24 +342,24 @@ This computes standard automatic metrics such as:
 The repository is organized into modular components corresponding to each stage of the MORPHID pipeline
 
 MORPHID/
-├─ cnn/                     # Stage I: Baseline CNNs
-│  ├─ core/                 # models, training, evaluation, ood.py
-│  ├─ scripts/              # main.py, gradcam.py, ood_eval.py
-│  └─ outputs/              # auto-generated (add to .gitignore)
+├─ cnn/ # Stage I: Baseline CNNs
+│ ├─ core/ # models, training, evaluation, ood.py
+│ ├─ scripts/ # main.py, gradcam.py, ood_eval.py
+│ └─ outputs/ # auto-generated (add to .gitignore)
 │
-├─ Captioning/              # Stage III: VLMs
-│  ├─ gemma/                # train.py, test_data.py
-│  ├─ llama/                # train_llama.py, test_llama.py, filter_gen.py
-│  ├─ prompts/              # system & user prompts
-│  └─ text_data/            # cleaned .csv feature files
+├─ Captioning/ # Stage III: VLMs
+│ ├─ gemma/ # train.py, test_data.py
+│ ├─ llama/ # train_llama.py, test_llama.py, filter_gen.py
+│ ├─ prompts/ # system & user prompts
+│ └─ text_data/ # cleaned .csv feature files
 │
-├─ otolith/                 # Evaluation scripts
-│  ├─ eval_one.py           # auto scores
-│  ├─ llm_eval.py           # GPT scoring
-│  └─ class_metrics.py      # classification metrics
+├─ otolith/ # Evaluation scripts
+│ ├─ eval_one.py # auto scores
+│ ├─ llm_eval.py # GPT scoring
+│ └─ class_metrics.py # classification metrics
 │
-├─ notebooks/               # Data cleaning, exploratory analysis
-├─ assets/                  # Figures for README (PNG/JPG only)
+├─ notebooks/ # Data cleaning, exploratory analysis
+├─ assets/ # Figures for README (PNG/JPG only)
 ├─ .gitignore
 ├─ requirements.txt
 ├─ README.md
