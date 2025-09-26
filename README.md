@@ -365,3 +365,30 @@ The repository is organized into modular components corresponding to each stage 
 - `LICENSE`: License for code/data use.  
 
 ---
+## Contributing  
+
+We welcome contributions to enhance **MORPHID**. To contribute:  
+
+1. **Fork** the repository.  
+2. **Create a new branch**:  
+   ```bash
+   git checkout -b feature-branch
+3. **Make your changes** and commit them.  
+4. **Commit your changes**:  
+   ```bash
+   git add .
+   git commit -m "Add feature" 
+   ```
+5. **Push** your changes to your fork. 
+   ```bash
+   git push origin feature-branch
+   ```
+6. **Open a pull request** and describe your changes.  
+
+## Contact
+For questions or issues, please open an issue in this repository or contact the maintainers
+
+#### Name: Reshma B, Vysakh Sukumaran, Davood Nihal
+#### Email: reshmababuraj89@gmail.com, sreemanvysakh@gmail.com, davoodnihal123@gmail.com
+
+---
