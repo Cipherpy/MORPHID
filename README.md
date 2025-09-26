@@ -268,3 +268,27 @@ In parallel to Gemma-3, we finetune **LLaMA-3.2 Vision** using **Unsloth** for
 
 ---
 
+### Evaluation & Outputs (Gemma-3 and LLaMA-3.2 Vision)
+evaluate the VLMs on the validation/test sets using dedicated test scripts.  
+Both scripts emit CSVs with *at least* the following columns:
+
+- `image_path`
+- `actual_label`          (ground-truth species; optional for some splits)
+- `predicted_label`       (model species prediction)
+- `generated_caption`     (model morphological description)
+
+---
+
+#### Gemma-3 Vision
+
+- **Test script:** [`Captioning/gemma/test_data.py`](./Captioning/gemma/test_data.py)  
+- **Default output CSV:** `otolith_test_results_progress.csv`
+
+#### LLaMA-3.2 Vision
+
+- **Test script:** [`Captioning/llama/test_llama.py`](./Captioning/llama/test_llama.py)  
+- **Default output CSV:** `llama_paired_captions_minimal.csv` in `Captioning/Outputs/`
+- **Post-filter script:** [`Captioning/llama/filter_gen.py`](./Captioning/llama/filter_gen.py)
+- **Filtered output CSV:** `output_filtered.csv` in `Captioning/Outputs/`
+
+---
