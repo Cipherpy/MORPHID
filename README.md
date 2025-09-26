@@ -310,8 +310,8 @@ After postprocessing and filtering, the final outputs of the VLMs on the test se
 
 #### 1. Automatic morphological feature scoring
 
-- **Script:** [`otolith/gemma/eval_one.py`](./otolith/gemma/eval_one.py)  
-- **Output CSV:** `caption_scores_all.csv` in `otolith/Outputs/` for llama it is `llama_caption_scores_all.csv`
+- **Script:** [`Captioning/gemma/eval_one.py`](./Captioning/gemma/eval_one.py)  
+- **Output CSV:** `caption_scores_all.csv` in `Captioning/Outputs/` for llama it is `llama_caption_scores_all.csv`
 
 This computes standard automatic metrics such as:  
 - BLEU-1/2/3/4  
@@ -319,22 +319,22 @@ This computes standard automatic metrics such as:
 
 #### 2. Classification Metrics
 
-- **Script:** [`otolith/gemma/class_metrics.py`](./otolith/gemma/class_metrics.py)  
+- **Script:** [`Captioning/gemma/class_metrics.py`](./Captioning/gemma/class_metrics.py)  
 - **Outputs:** 
   - Text report: precision, recall, F1-score per species
   - Confusion matrix (saved as PNG) in `Captioning/Outputs/`
 
 #### 3. Character wise evaluation
 
-- To get the variations in each feature, and the hallucinations we used the script **Script:** [`otolith/gemma/ostium_variations.py`](./otolith/gemma/ostium_variations.py)  for a feature "ostium"
-  - **Output:** `ostium_confusion_matrix.png` in `otolith/llama/plots/`
-- To get the CER for a feature "sulcus acusticus" we used the script **Script:** [`otolith/gemma/sulcus_cer.py`](./otolith/gemma/sulcus_cer.py)  
+- To get the variations in each feature, and the hallucinations we used the script **Script:** [`Captioning/gemma/ostium_variations.py`](./Captioning/gemma/ostium_variations.py)  for a feature "ostium"
+  - **Output:** `ostium_confusion_matrix.png` in `Captioning/llama/plots/`
+- To get the CER for a feature "sulcus acusticus" we used the script **Script:** [`Captioning/gemma/sulcus_cer.py`](./Captioning/gemma/sulcus_cer.py)  
   - **Output:** Mean CER, Median CER of each feature.
 
 #### 4. OOD Metrics
 
-- **Script:** [`otolith/gemma/ood_metrics.py`](./otolith/gemma/ood_metrics.py)  
--**Plot:** [`otolith/gemma/ood_metric_plot.py`](./otolith/gemma/ood_metric_plot.py) 
+- **Script:** [`Captioning/gemma/ood_metrics.py`](./Captioning/gemma/ood_metrics.py)  
+-**Plot:** [`Captioning/gemma/ood_metric_plot.py`](./Captioning/gemma/ood_metric_plot.py) 
 
 ---
 ## Repository Structure  
