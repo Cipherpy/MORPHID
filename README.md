@@ -341,26 +341,27 @@ This computes standard automatic metrics such as:
 
 The repository is organized into modular components corresponding to each stage of the MORPHID pipeline
 
-MORPHID/
-├─ cnn/ # Stage I: Baseline CNNs
-│ ├─ core/ # models, training, evaluation, ood.py
-│ ├─ scripts/ # main.py, gradcam.py, ood_eval.py
-│ └─ outputs/ # auto-generated (add to .gitignore)
-│
-├─ Captioning/ # Stage III: VLMs
-│ ├─ gemma/ # train.py, test_data.py
-│ ├─ llama/ # train_llama.py, test_llama.py, filter_gen.py
-│ ├─ prompts/ # system & user prompts
-│ └─ text_data/ # cleaned .csv feature files
-│
-├─ otolith/ # Evaluation scripts
-│ ├─ eval_one.py # auto scores
-│ ├─ llm_eval.py # GPT scoring
-│ └─ class_metrics.py # classification metrics
-│
-├─ notebooks/ # Data cleaning, exploratory analysis
-├─ assets/ # Figures for README (PNG/JPG only)
-├─ .gitignore
-├─ requirements.txt
-├─ README.md
-└─ LICENSE
+- `cnn/`: Stage I — Baseline CNNs for otolith classification and OOD detection.  
+  - `core/`: Models, training loops, evaluation functions, OOD detection.  
+  - `scripts/`: Entry points (`main.py`, `gradcam.py`, `ood_eval.py`).  
+  - `outputs/`: Auto-generated models, plots, metrics (ignored in git).  
+
+- `Captioning/`: Stage III — Vision-Language Models (VLMs) for morphological captioning and species prediction.  
+  - `gemma/`: Gemma-3 Vision finetuning (`train.py`) and testing (`test_data.py`).  
+  - `llama/`: LLaMA-3.2 Vision finetuning (`train_llama.py`), testing (`test_llama.py`), filtering (`filter_gen.py`).  
+  - `prompts/`: System and user prompts for taxonomy-aware generation.  
+  - `text_data/`: Cleaned `.csv` feature files (preprocessed from raw `.xlsx`).  
+
+- `otolith/`: Evaluation scripts.  
+  - `eval_one.py`: Automatic caption scoring (BLEU, ROUGE, METEOR).  
+  - `llm_eval.py`: GPT-based scoring for morphological correctness.  
+  - `class_metrics.py`: Species classification metrics & confusion matrix.  
+
+- `notebooks/`: Data cleaning and exploratory analysis (Jupyter notebooks).  
+- `assets/`: Figures and sample otolith images for the README (PNG/JPG only).  
+- `.gitignore`: Ignore large files, datasets, and auto-generated outputs.  
+- `requirements.txt`: Python dependencies for reproducibility.  
+- `README.md`: Documentation (this file).  
+- `LICENSE`: License for code/data use.  
+
+---
