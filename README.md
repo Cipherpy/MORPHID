@@ -310,7 +310,7 @@ After postprocessing and filtering, the final outputs of the VLMs on the test se
 
 #### 1. Automatic morphological feature scoring
 
-- **Script:** [`otolith/eval_one.py`](./otolith/eval_one.py)  
+- **Script:** [`otolith/gemma/eval_one.py`](./otolith/gemma/eval_one.py)  
 - **Output CSV:** `caption_scores_all.csv` in `otolith/Outputs/` for llama it is `llama_caption_scores_all.csv`
 
 This computes standard automatic metrics such as:  
@@ -319,9 +319,48 @@ This computes standard automatic metrics such as:
 
 #### 2. Classification Metrics
 
-- **Script:** [`otolith/class_metrics.py`](./otolith/class_metrics.py)  
+- **Script:** [`otolith/gemma/class_metrics.py`](./otolith/gemma/class_metrics.py)  
 - **Outputs:** 
   - Text report: precision, recall, F1-score per species
   - Confusion matrix (saved as PNG) in `Captioning/Outputs/`
 
+#### 3. Character wise evaluation
+
+- To get the variations in each feature, and the hallucinations we used the script **Script:** [`otolith/gemma/ostium_variations.py`](./otolith/gemma/ostium_variations.py)  for a feature "ostium"
+  - **Output:** `ostium_confusion_matrix.png` in `otolith/llama/plots/`
+- To get the CER for a feature "sulcus acusticus" we used the script **Script:** [`otolith/gemma/sulcus_cer.py`](./otolith/gemma/sulcus_cer.py)  
+  - **Output:** Mean CER, Median CER of each feature.
+
+#### 4. OOD Metrics
+
+- **Script:** [`otolith/gemma/ood_metrics.py`](./otolith/gemma/ood_metrics.py)  
+-**Plot:** [`otolith/gemma/ood_metric_plot.py`](./otolith/gemma/ood_metric_plot.py) 
+
 ---
+## Repository Structure  
+
+The repository is organized into modular components corresponding to each stage of the MORPHID pipeline
+
+MORPHID/
+├─ cnn/                     # Stage I: Baseline CNNs
+│  ├─ core/                 # models, training, evaluation, ood.py
+│  ├─ scripts/              # main.py, gradcam.py, ood_eval.py
+│  └─ outputs/              # auto-generated (add to .gitignore)
+│
+├─ Captioning/              # Stage III: VLMs
+│  ├─ gemma/                # train.py, test_data.py
+│  ├─ llama/                # train_llama.py, test_llama.py, filter_gen.py
+│  ├─ prompts/              # system & user prompts
+│  └─ text_data/            # cleaned .csv feature files
+│
+├─ otolith/                 # Evaluation scripts
+│  ├─ eval_one.py           # auto scores
+│  ├─ llm_eval.py           # GPT scoring
+│  └─ class_metrics.py      # classification metrics
+│
+├─ notebooks/               # Data cleaning, exploratory analysis
+├─ assets/                  # Figures for README (PNG/JPG only)
+├─ .gitignore
+├─ requirements.txt
+├─ README.md
+└─ LICENSE
