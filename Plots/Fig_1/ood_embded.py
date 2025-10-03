@@ -93,7 +93,7 @@ for i, m in enumerate(metrics):
 ax.set_yticks(range(len(metrics)))
 ax.set_yticklabels(metrics)
 ax.set_xlabel("Metric value", color=C_TXT)
-ax.set_title("ID vs OOD — Pastel Interval Box Plot (wider boxes)", color=C_TXT)
+#ax.set_title("ID vs OOD — Pastel Interval Box Plot (wider boxes)", color=C_TXT)
 
 # Soft alternating bands
 for j in range(len(metrics)):
