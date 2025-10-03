@@ -124,7 +124,7 @@ plt.rcParams["font.size"] = 7
 # -----------------------------
 # Data
 # -----------------------------
-metrics = ["Mahalanobis distance", "PCA residual", "KNN mean"]
+metrics = ["maha_min", "pca_residual", "knn_mean"]
 id_ranges = [(31, 77), (1.25, 3.20), (2.45, 4.99)]
 ood_ranges = [(90, 227), (4.6, 13), (9.7, 34)]
 species6_overlap_maha = (58, 77)
@@ -170,8 +170,8 @@ def plot_ranges_seaborn(ax, metrics, id_ranges, ood_ranges, species6_overlap=Non
 
     # axes cosmetics
     ax.set_yticks(range(len(metrics)))
-    ax.set_yticklabels(metrics,fontsize=12)
-    ax.set_xlabel("Normalized metric value (0–1)" if normalized else "Metric value",fontsize=12)
+    ax.set_yticklabels(metrics,fontsize=7)
+    ax.set_xlabel("Normalized metric value (0–1)" if normalized else "Metric value",fontsize=7)
     sns.despine(ax=ax, left=False, bottom=False)
     ax.legend(loc="upper right", frameon=False, fontsize=7)
 
@@ -183,6 +183,6 @@ plot_ranges_seaborn(ax, metrics, id_ranges, ood_ranges,
                     species6_overlap=species6_overlap_maha, normalized=False)
 
 plt.tight_layout()
-plt.savefig("/home/reshma/MORPHID/Plots/Fig_1/plotsID_vs_OOD_metrics_species6_overlap_seaborn.png",
-            dpi=1200, bbox_inches="tight",transparent=True)
+plt.savefig("/home/reshma/MORPHID/Plots/Fig_1/plots/ID_vs_OOD_metrics_species6_overlap_seaborn.png",
+            dpi=300, bbox_inches="tight",transparent=True)
 plt.show()
