@@ -23,13 +23,13 @@ mpl.rcParams.update({
 })
 
 # ========================= INPUTS ========================
-CSV_PATH = "/home/reshma/MORPHID/Plots/Fig_2/llama_output_filtered.csv" 
+CSV_PATH = "/home/reshma/MORPHID/Plots/Fig_2/llama_grayscale_output_filtered.csv" 
 COL_TRUE = "actual_label"
 COL_PRED = "predicted_label"
 
-OUT_HM_PNG      = "/home/reshma/MORPHID/Plots/Fig_2/llama_confusion_heatmap_vibrant.png"
-OUT_CHORD_PNG   = "/home/reshma/MORPHID/Plots/Fig_2/llama_confusion_chord_connect_only_vibrant.png"
-OUT_ALLUVIAL    = "/home/reshma/MORPHID/Plots/Fig_2/llama_alluvial_vibrant.png"
+OUT_HM_PNG      = "/home/reshma/MORPHID/Plots/Fig_2/llama_grayscale_otolith_confusion_heatmap_vibrant.png"
+OUT_CHORD_PNG   = "/home/reshma/MORPHID/Plots/Fig_2/llama_grayscale_otolith_confusion_chord_connect_only_vibrant.png"
+OUT_ALLUVIAL    = "/home/reshma/MORPHID/Plots/Fig_2/llama_grayscale_otolith_alluvial_vibrant.png"
 
 # ========================= HELPERS =======================
 def format_taxon_label(name: str) -> str:
