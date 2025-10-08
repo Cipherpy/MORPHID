@@ -1,75 +1,92 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import numpy as np
 import pandas as pd
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
-import matplotlib as mpl
+from scipy.stats import zscore
 
-# -------------------------
-# Font settings (serif, size 7)
-# -------------------------
+# ───────────── Config (Nature-style) ─────────────
+FIG_W_MM, FIG_H_MM = 180, 160   # ~two-column width
+FIG_W_IN, FIG_H_IN = FIG_W_MM/25.4, FIG_H_MM/25.4
+
 mpl.rcParams.update({
-    "font.family": "serif",
+    "figure.dpi": 120,
+    "savefig.dpi": 1200,
+    "font.family": "sans-serif",
+    "font.sans-serif": ["DejaVu Sans", "Arial", "Liberation Sans"],
     "font.size": 7,
-    "axes.titlesize": 7,
     "axes.labelsize": 7,
-    "xtick.labelsize": 7,
+    "xtick.labelsize":7,
     "ytick.labelsize": 7,
-    "legend.fontsize": 7
+    "axes.linewidth": 0.9,
+    "pdf.fonttype": 42,    # editable text in Illustrator
+    "ps.fonttype": 42
 })
 
-# -------------------------
-# Load CSV
-# -------------------------
-CSV_FILE = "/home/reshma/MORPHID/Plots/Fig_2/Grayscale_gemma_captions_scores.csv"
+# ───────────── Inputs ─────────────
+CSV_FILE = "/home/reshma/MORPHID/Plots/Fig_2/caption_scores_llama.csv"
+LABEL_COL = "actual_label"
+METRICS   = ["BLEU-1", "BLEU-2", "BLEU-3", "BLEU-4", "ROUGE-L"]
+OUTDIR    = "fig_species_scores"
+os.makedirs(OUTDIR, exist_ok=True)
+
+# ───────────── Load & aggregate ─────────────
 df = pd.read_csv(CSV_FILE)
+df[LABEL_COL] = df[LABEL_COL].astype(str).str.strip()
+species_stats = df.groupby(LABEL_COL)[METRICS].mean().sort_index()
+species_counts = df.groupby(LABEL_COL).size().rename("N")
 
-# -------------------------
-# Group by species (actual_label) and compute mean scores
-# -------------------------
-metrics = ["BLEU-1", "BLEU-2", "BLEU-3", "BLEU-4", "ROUGE-L"]
-species_matrix = df.groupby("actual_label")[metrics].mean()
+# helper: italicize genus + epithet, keep “Genus sp.” as “Genus sp.”
+def italicize_taxon(name: str) -> str:
+    txt = name.strip()
+    parts = txt.split(" ", 1)
+    if len(parts) == 2 and parts[1].strip().lower().startswith("sp"):
+        return r"$\it{" + parts[0] + r"}$ " + parts[1]
+    elif len(parts) == 2:
+        return r"$\it{" + parts[0] + r"}$ " + r"$\it{" + parts[1] + r"}$"
+    else:
+        return r"$\it{" + txt + r"}$"
 
-# -------------------------
-# Save to CSV
-# -------------------------
-species_matrix.to_csv("species_scores_matrix.csv")
-print("✅ Species-wise score matrix saved: species_scores_matrix.csv")
+# save the species × metric mean table
+species_stats.to_csv(os.path.join(OUTDIR, "species_scores_matrix.csv"), float_format="%.4f")
 
-# -------------------------
-# Heatmap visualization
-# -------------------------
-plt.figure(figsize=(10, 6))
-ax = sns.heatmap(
-    species_matrix,
-    annot=True,
-    cmap="Oranges",
-    fmt=".3f",
-    linewidths=0.5,
-    linecolor="black",
-    #cbar_kws={'label': 'Score'},
-    cbar=False,  # 🔹 remove color bar
-    annot_kws={"color": "black"}  # values inside plot in black
+# ───────────── Option A: Clustered heatmap ─────────────
+# Normalize per-metric for clustering (z-score), but annotate with real values.
+Z = species_stats.apply(lambda col: zscore(col, nan_policy="omit"))
+# Keep same index/columns
+annot_vals = species_stats.copy()
+
+# Use seaborn clustermap (creates its own fig); we align font sizes & style
+cg = sns.clustermap(
+    Z,
+    figsize=(FIG_W_IN, FIG_H_IN),
+    cmap="viridis", center=0.0,
+    linewidths=0.3, linecolor="#f2f2f2",
+    row_cluster=True, col_cluster=False,  # cluster species only; metrics keep order
+    cbar_kws={"label": "Z-score (within metric)"},
 )
 
-# 🔹 Format Y-axis tick labels properly
-new_labels = []
-for label in ax.get_yticklabels():
-    text = label.get_text().strip()
-    parts = text.split(" ", 1)  # split into genus and rest
-    if len(parts) == 2 and parts[1].strip().startswith("sp"):
-        # Case: Genus sp. → italicize only Genus
-        new_text = r"$\it{" + parts[0] + r"}$ " + parts[1]
-    elif len(parts) == 2:
-        # Case: Genus species → italicize both, keep space
-        new_text = r"$\it{" + parts[0] + r"}$ " + r"$\it{" + parts[1] + r"}$"
-    else:
-        # Single-word label (just in case) → italicize whole
-        new_text = r"$\it{" + text + r"}$"
-    new_labels.append(new_text)
+# Put true mean values as text annotations (smaller font, 2 decimals)
+ax = cg.ax_heatmap
+for i, sp in enumerate(Z.index):
+    for j, m in enumerate(Z.columns):
+        val = annot_vals.loc[sp, m]
+        ax.text(j+0.5, i+0.5, f"{val:.2f}", ha="center", va="center",
+                fontsize=7, color="black")
 
-ax.set_yticklabels(new_labels)
+# Replace y tick labels with italics (must map new y order from clustermap)
+new_yticks = [italicize_taxon(txt.get_text()) for txt in ax.get_yticklabels()]
+ax.set_yticklabels(new_yticks, rotation=0)
 
-plt.xlabel("Metrics", fontsize=7)
-plt.ylabel("Species name", fontsize=7)
-plt.tight_layout()
-plt.savefig("species_scores_heatmap.png", dpi=1200, transparent=True, bbox_inches="tight")
-plt.show()
+ax.set_xlabel("Metric", labelpad=4)
+ax.set_ylabel("Species name", labelpad=4)
+# cg.fig.suptitle("A  |  Species-wise caption scores (clustered by profile)", x=0.0, y=1.02, ha="left", fontsize=7)
+cg.fig.tight_layout()
+cg.fig.savefig(os.path.join(OUTDIR, "llama_A_clustered_heatmap.png"), bbox_inches="tight",transparent=True)
+cg.fig.savefig(os.path.join(OUTDIR, "llama_A_clustered_heatmap.pdf"), transparent=True, bbox_inches="tight")
+
+
