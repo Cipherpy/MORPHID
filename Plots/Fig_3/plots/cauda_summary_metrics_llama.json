@@ -1,0 +1,19 @@
+{
+  "num_classes": 8,
+  "classes": [
+    "Not visible in ",
+    "curled",
+    "markedly",
+    "much longer tha",
+    "slightly",
+    "straight",
+    "strongly",
+    "undifferentiate"
+  ],
+  "metrics": {
+    "accuracy_top1": 0.645083932853717,
+    "precision_macro": 0.47456522116554883,
+    "recall_macro": 0.35463423147223283,
+    "f1_macro": 0.3458452542922524
+  }
+}

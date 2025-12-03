@@ -1,0 +1,14 @@
+                 precision    recall  f1-score   support
+
+         curled       0.00      0.00      0.00         0
+       markedly       0.38      0.53      0.44       166
+round to irregu       0.00      0.00      0.00         0
+       slightly       0.97      0.79      0.87       248
+slightly to str       1.00      0.31      0.47        13
+       straight       0.92      0.97      0.95       329
+       strongly       0.83      0.58      0.68       435
+undifferentiate       1.00      1.00      1.00        48
+
+       accuracy                           0.73      1239
+      macro avg       0.64      0.52      0.55      1239
+   weighted avg       0.83      0.73      0.77      1239

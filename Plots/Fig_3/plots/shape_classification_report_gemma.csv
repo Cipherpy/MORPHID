@@ -1,0 +1,44 @@
+,precision,recall,f1-score,support
+approximately pentagonal,1.0,0.7395833333333334,0.8502994011976048,96.0
+cuneiform to elliptical,0.0,0.0,0.0,2.0
+discoidal,0.953125,0.8591549295774648,0.9037037037037037,71.0
+discoidal to hour-glass,0.05,0.2,0.08,5.0
+elliptical,0.9937106918238994,0.7383177570093458,0.8471849865951743,214.0
+elliptical to fusiform,0.0,0.0,0.0,1.0
+elliptical to hour-glass,0.0,0.0,0.0,1.0
+elliptical to oval,0.6,0.75,0.6666666666666666,4.0
+elliptical to rhomboidal,0.0,0.0,0.0,0.0
+fusiform,0.16216216216216217,0.6666666666666666,0.2608695652173913,9.0
+fusiform to elliptic,0.0,0.0,0.0,1.0
+fusiform to lancelolated,0.0,0.0,0.0,39.0
+fusiform to lanceolated,0.0,0.0,0.0,0.0
+fusiform to sagitiform,0.0,0.0,0.0,0.0
+fusiform to spindle-shaped,1.0,1.0,1.0,2.0
+hexagonal,1.0,0.09090909090909091,0.16666666666666666,11.0
+hexagonal to fusiform,0.0,0.0,0.0,0.0
+hour-glass,0.0,0.0,0.0,14.0
+hour-glass to rhomboidal,0.0,0.0,0.0,0.0
+irregular,1.0,1.0,1.0,32.0
+oblong,1.0,1.0,1.0,45.0
+oval,0.8838095238095238,0.8212389380530973,0.8513761467889909,565.0
+oval to cuneiform,1.0,1.0,1.0,2.0
+oval to elliptic,0.0,0.0,0.0,26.0
+oval to elliptical,0.0,0.0,0.0,0.0
+pentagonal,1.0,0.7692307692307693,0.8695652173913043,13.0
+pentagonal to hour-glass,0.0,0.0,0.0,0.0
+rhomboidal,0.0,0.0,0.0,0.0
+sagitiform,0.0,0.0,0.0,4.0
+semicircular,0.75,0.75,0.75,8.0
+semicircular to elliptical,0.0,0.0,0.0,0.0
+semicircular to hour-glass,0.0,0.0,0.0,1.0
+semicircular to triangular,0.0,0.0,0.0,0.0
+spindle-shaped,0.9036144578313253,1.0,0.9493670886075949,75.0
+spindle-shaped to fusiform,0.0,0.0,0.0,9.0
+squared to hour-glass,0.0,0.0,0.0,1.0
+squared to irregular,0.0,0.0,0.0,1.0
+squared to oval,0.0,0.0,0.0,1.0
+triangular,1.0,1.0,1.0,3.0
+triangular to spindle-shaped,0.0,0.0,0.0,0.0
+accuracy,0.7484076433121019,0.7484076433121019,0.7484076433121019,0.7484076433121019
+macro avg,0.33241054589067276,0.3096275371194942,0.3048924860708774,1256.0
+weighted avg,0.8451901972925989,0.7484076433121019,0.7865219117067622,1256.0

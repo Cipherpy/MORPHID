@@ -1,0 +1,14 @@
+                 precision    recall  f1-score   support
+
+Not visible in        0.00      0.00      0.00         0
+         curled       0.00      0.00      0.00         0
+       markedly       0.45      0.66      0.54       166
+much longer tha       0.00      0.00      0.00         0
+       slightly       0.72      0.89      0.80       261
+       straight       0.85      0.83      0.84       329
+       strongly       0.77      0.44      0.56       435
+undifferentiate       1.00      0.02      0.03        60
+
+       accuracy                           0.65      1251
+      macro avg       0.47      0.35      0.35      1251
+   weighted avg       0.75      0.65      0.65      1251

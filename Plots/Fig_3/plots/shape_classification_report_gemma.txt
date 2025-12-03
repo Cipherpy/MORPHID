@@ -1,0 +1,46 @@
+                              precision    recall  f1-score   support
+
+    approximately pentagonal       1.00      0.74      0.85        96
+     cuneiform to elliptical       0.00      0.00      0.00         2
+                   discoidal       0.95      0.86      0.90        71
+     discoidal to hour-glass       0.05      0.20      0.08         5
+                  elliptical       0.99      0.74      0.85       214
+      elliptical to fusiform       0.00      0.00      0.00         1
+    elliptical to hour-glass       0.00      0.00      0.00         1
+          elliptical to oval       0.60      0.75      0.67         4
+    elliptical to rhomboidal       0.00      0.00      0.00         0
+                    fusiform       0.16      0.67      0.26         9
+        fusiform to elliptic       0.00      0.00      0.00         1
+    fusiform to lancelolated       0.00      0.00      0.00        39
+     fusiform to lanceolated       0.00      0.00      0.00         0
+      fusiform to sagitiform       0.00      0.00      0.00         0
+  fusiform to spindle-shaped       1.00      1.00      1.00         2
+                   hexagonal       1.00      0.09      0.17        11
+       hexagonal to fusiform       0.00      0.00      0.00         0
+                  hour-glass       0.00      0.00      0.00        14
+    hour-glass to rhomboidal       0.00      0.00      0.00         0
+                   irregular       1.00      1.00      1.00        32
+                      oblong       1.00      1.00      1.00        45
+                        oval       0.88      0.82      0.85       565
+           oval to cuneiform       1.00      1.00      1.00         2
+            oval to elliptic       0.00      0.00      0.00        26
+          oval to elliptical       0.00      0.00      0.00         0
+                  pentagonal       1.00      0.77      0.87        13
+    pentagonal to hour-glass       0.00      0.00      0.00         0
+                  rhomboidal       0.00      0.00      0.00         0
+                  sagitiform       0.00      0.00      0.00         4
+                semicircular       0.75      0.75      0.75         8
+  semicircular to elliptical       0.00      0.00      0.00         0
+  semicircular to hour-glass       0.00      0.00      0.00         1
+  semicircular to triangular       0.00      0.00      0.00         0
+              spindle-shaped       0.90      1.00      0.95        75
+  spindle-shaped to fusiform       0.00      0.00      0.00         9
+       squared to hour-glass       0.00      0.00      0.00         1
+        squared to irregular       0.00      0.00      0.00         1
+             squared to oval       0.00      0.00      0.00         1
+                  triangular       1.00      1.00      1.00         3
+triangular to spindle-shaped       0.00      0.00      0.00         0
+
+                    accuracy                           0.75      1256
+                   macro avg       0.33      0.31      0.30      1256
+                weighted avg       0.85      0.75      0.79      1256

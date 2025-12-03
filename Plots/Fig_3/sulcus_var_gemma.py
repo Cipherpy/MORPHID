@@ -20,33 +20,29 @@ from matplotlib.lines import Line2D
 mpl.rcParams.update({
     "font.family": "sans-serif",
     "font.sans-serif": ["DejaVu Sans", "Arial", "Liberation Sans"],
-    "font.size": 9,        # slightly smaller base font
-    "axes.labelsize": 9,
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-    "legend.title_fontsize": 9,
-    "legend.fontsize": 9,
+    "font.size": 10,        # base font size (between 5–7 pt)
+    "axes.labelsize": 10,   # axis labels
+    "xtick.labelsize": 10,
+    "ytick.labelsize": 10,
+    "legend.title_fontsize": 10,
+    "legend.fontsize": 10,
 })
 
 # ========================= CONFIG =========================
-CSV_IN   = "/home/reshma/MORPHID/Plots/Fig_3/paired_captions_minimall_modi_gemma.csv"
+CSV_IN   = "/home/reshma/MORPHID/Plots/Fig_3/paired_captions_minimall_modi_gemma.csv"  # change if needed
 COL_GT   = "Description"
 COL_PRED = "generated_caption"
 
-OUT_DIR        = "plots/"
-OUT_NORM_CSV   = os.path.join(OUT_DIR, "cauda_cm_normalized_gemma.csv")
-OUT_PNG        = os.path.join(OUT_DIR, "cauda_dotmatrix_correct_vs_wrong_gemma.png")
+OUT_DIR        = "gemma/plots"
+OUT_NORM_CSV   = os.path.join(OUT_DIR, "sulcus_acusticus_cm_normalized_gemma.csv")
+OUT_PNG        = os.path.join(OUT_DIR, "sulcus_acusticus_dotmatrix_correct_vs_wrong_gemma.png")
 
 # Plot sizing & styles
-# 🔹 Make dots smaller (so they fit tiny cells)
-DOT_MIN   = 3       # min marker area (pt^2)
-DOT_MAX   = 40      # max marker area (pt^2)
-
-# 🔹 Much smaller per-cell scaling
-FIG_DX    = 0.03    # width scale per column (very small)
-FIG_DY    = 0.03    # height scale per row (very small)
-
-LABEL_PAD = 4       # slightly smaller padding
+DOT_MIN   = 8       # min marker area (pt^2)
+DOT_MAX   = 180     # max marker area (pt^2)
+FIG_DX    = 0.40    # width scale per column
+FIG_DY    = 0.35    # height scale per row
+LABEL_PAD = 6       # axis label padding
 GRID_ALPHA = 0.06
 SKIP_BELOW = 1e-6   # do not draw bubbles for (near-)zero values
 
@@ -55,45 +51,46 @@ COLOR_WRONG   = "#d64545"  # red
 GRID_COLOR    = (0, 0, 0, GRID_ALPHA)
 
 # ===================== HELPERS ============================
-def extract_raw_ostium(text: str) -> str:
-    """Extract exact raw text after 'Cauda:' up to the next period or end."""
+def extract_raw_sulcus_acusticus(text: str) -> str:
+    """Extract exact raw text after 'Sulcus acusticus:' up to the next period or end."""
     if pd.isna(text):
         return ""
-    m = re.search(r"Cauda:\s*([^\.]*)", str(text), flags=re.IGNORECASE)
+    m = re.search(r"Sulcus\s+acusticus:\s*([^\.]*)", str(text), flags=re.IGNORECASE)
     return m.group(1).strip() if m else ""
 
-def clean_feature_label(s: str) -> str:
+# 11-char labels for all features (including hallucinated one)
+LABEL_MAP = {
+    "heterosulcoid, ostial, median":        "HS-OS-MED__",
+    "heterosulcoid, ostial, inframedian":   "HS-OS-INF__",
+    "heterosulcoid, ostial, supramedian":   "HS-OS-SUP__",
+    "pseudo-archaesulcoid, mesial":         "PA-MESIAL__",
+    "pseudo-archaesulcoid, ostial, median": "PA-OS-MED__",
+    "homosulcoid, para-ostial, median":     "HO-PO-MED__",
+    "heterosulcoid, ostio-caudal, median":  "HS-OC-MED__",
+    "heterosulcoid, ostial, median to supramedian": "HS-OS-M2S__",  # optional if present
+    "homosulcoid, mesial, median":     "HO-MESIAL-MED__",
+    "Not visible":                          "NOTVISIBLE_",
+    # hallucinated / wrong feature:
+    "crenate ventral margins":              "HALLUCINATE",
+}
+
+def to_short_label(raw: str) -> str:
     """
-    Clean cauda feature phrases for plotting:
-    - remove 'tubular' (and its following comma/space)
-    - remove trailing 'curved'
-    - remove leading commas
-    - trim to max 15 characters
+    Convert raw sulcus description to short code:
+    - use LABEL_MAP if available
+    - otherwise truncate cleaned raw text to max 11 characters
     """
-    if pd.isna(s):
+    if pd.isna(raw):
         return ""
-    s = str(s).strip()
-
-    # remove 'tubular' (case-insensitive) and optional following comma/space
-    s = re.sub(r'\b[Tt]ubular\b,?\s*', '', s)
-
-    # remove trailing 'curved' (e.g., 'strongly curved' -> 'strongly')
-    s = re.sub(r'\s*[Cc]urved\.?$', '', s)
-
-    # remove leading commas and surrounding spaces
-    s = s.lstrip(",;:- ").strip()
-
-    # normalise spaces
-    s = re.sub(r'\s+', ' ', s)
-
-    # final strip
-    s = s.strip()
-
-    # limit character length to 15
-    if len(s) > 15:
-        s = s[:15]
-
-    return s
+    raw = str(raw).strip()
+    if raw in LABEL_MAP:
+        return LABEL_MAP[raw]
+    # fallback: remove commas, collapse spaces, truncate
+    tmp = re.sub(r"[,\s]+", " ", raw)
+    tmp = tmp.strip()
+    if len(tmp) > 11:
+        tmp = tmp[:11]
+    return tmp
 
 def row_normalize(df_counts: pd.DataFrame) -> pd.DataFrame:
     """Row-normalize a count matrix to [0,1]."""
@@ -107,28 +104,28 @@ os.makedirs(OUT_DIR, exist_ok=True)
 df = pd.read_csv(CSV_IN)
 
 # Parse GT and predicted raw phrases
-df["cauda_gt_raw"]  = df[COL_GT].apply(extract_raw_ostium)
-df["cauda_gen_raw"] = df[COL_PRED].apply(extract_raw_ostium)
+df["sulcus_acusticus_gt_raw"]  = df[COL_GT].apply(extract_raw_sulcus_acusticus)
+df["sulcus_acusticus_gen_raw"] = df[COL_PRED].apply(extract_raw_sulcus_acusticus)
 
 filtered = df[
-    (df["cauda_gt_raw"]  != "") &
-    (df["cauda_gen_raw"] != "")
+    (df["sulcus_acusticus_gt_raw"]  != "") &
+    (df["sulcus_acusticus_gen_raw"] != "")
 ].copy()
 
-# Clean labels (remove 'tubular', trailing 'curved', leading comma, and limit to 15 chars)
-filtered["cauda_gt_label"]  = filtered["cauda_gt_raw"].apply(clean_feature_label)
-filtered["cauda_gen_label"] = filtered["cauda_gen_raw"].apply(clean_feature_label)
+# Apply short labels
+filtered["sulcus_acusticus_gt_lbl"]  = filtered["sulcus_acusticus_gt_raw"].apply(to_short_label)
+filtered["sulcus_acusticus_gen_lbl"] = filtered["sulcus_acusticus_gen_raw"].apply(to_short_label)
 
-# Drop rows that became empty after cleaning
+# Drop rows that became empty
 filtered = filtered[
-    (filtered["cauda_gt_label"]  != "") &
-    (filtered["cauda_gen_label"] != "")
+    (filtered["sulcus_acusticus_gt_lbl"]  != "") &
+    (filtered["sulcus_acusticus_gen_lbl"] != "")
 ].copy()
 
-# Crosstab (counts) on cleaned labels
+# Crosstab (counts) using the short labels
 cm_counts = pd.crosstab(
-    filtered["cauda_gt_label"],
-    filtered["cauda_gen_label"],
+    filtered["sulcus_acusticus_gt_lbl"],
+    filtered["sulcus_acusticus_gen_lbl"],
     dropna=False
 )
 
@@ -146,19 +143,17 @@ cols = cm_norm.columns.tolist()
 vals = cm_norm.values
 
 # ===================== PLOT ===============================
-# 🔹 Remove huge 10x8" minimum → allow tight figure
-fig_w = max(9.0, FIG_DX * len(cols))   # tiny base figure, scaled by columns
-fig_h = max(3.0, FIG_DY * len(rows))   # tiny base figure, scaled by rows
-
+fig_w = max(10, FIG_DX * len(cols))
+fig_h = max(8,  FIG_DY * len(rows))
 plt.figure(figsize=(fig_w, fig_h), dpi=1500)
 ax = plt.gca()
 ax.set_facecolor("white")
 
 # faint grid
 for x in range(len(cols) + 1):
-    ax.axvline(x - 0.5, color=GRID_COLOR, lw=0.4, zorder=0)
+    ax.axvline(x - 0.5, color=GRID_COLOR, lw=0.6, zorder=0)
 for y in range(len(rows) + 1):
-    ax.axhline(y - 0.5, color=GRID_COLOR, lw=0.4, zorder=0)
+    ax.axhline(y - 0.5, color=GRID_COLOR, lw=0.6, zorder=0)
 
 # Scatter each (non-zero) cell
 ys, xs = np.indices(vals.shape)
@@ -190,7 +185,7 @@ ax.scatter(
     alpha=0.9
 )
 
-# ticks & labels
+# ticks & labels (short)
 ax.set_xticks(np.arange(len(cols)))
 ax.set_yticks(np.arange(len(rows)))
 ax.set_xticklabels(cols, rotation=45, ha="right")
@@ -202,7 +197,7 @@ ax.invert_yaxis()
 # spines
 for spine in ax.spines.values():
     spine.set_visible(True)
-    spine.set_linewidth(0.6)
+    spine.set_linewidth(0.8)
     spine.set_alpha(0.3)
 
 ax.set_xlabel("Generated features", labelpad=LABEL_PAD)
@@ -211,7 +206,7 @@ ax.set_xlim(-0.5, len(cols)-0.5)
 ax.set_ylim(len(rows)-0.5, -0.5)
 
 plt.tight_layout()
-plt.savefig(OUT_PNG, dpi=1500, transparent=True, bbox_inches="tight")
+plt.savefig(OUT_PNG, dpi=200, bbox_inches="tight")
 plt.close()
 
 print(f"Saved:\n- Normalized CM: {OUT_NORM_CSV}\n- Figure: {OUT_PNG}")

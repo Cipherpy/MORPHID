@@ -1,0 +1,22 @@
+{
+  "num_classes": 11,
+  "classes": [
+    "HALLUCINATE",
+    "HO-MESIAL-MD",
+    "HO-PO-MED__",
+    "HS-OC-MED__",
+    "HS-OS-INF__",
+    "HS-OS-M2S__",
+    "HS-OS-MED__",
+    "HS-OS-SUP__",
+    "NOTVISIBLE_",
+    "PA-MESIAL__",
+    "PA-OS-MED__"
+  ],
+  "metrics": {
+    "accuracy_top1": 0.7794585987261147,
+    "precision_macro": 0.6821614600451368,
+    "recall_macro": 0.6299911953678644,
+    "f1_macro": 0.6353943591275479
+  }
+}
