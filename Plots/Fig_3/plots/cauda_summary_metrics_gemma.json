@@ -1,14 +1,14 @@
 {
   "num_classes": 8,
   "classes": [
-    "curled",
-    "markedly",
-    "round to irregu",
-    "slightly",
-    "slightly to str",
-    "straight",
-    "strongly",
-    "undifferentiate"
+    "tubular, curled curved",
+    "tubular, markedly curved",
+    "tubular, round to irregular, sinuate dorsal and crenate ventral margins",
+    "tubular, slightly curved",
+    "tubular, slightly to strongly curved",
+    "tubular, straight",
+    "tubular, strongly curved",
+    "undifferentiated"
   ],
   "metrics": {
     "accuracy_top1": 0.7320419693301049,

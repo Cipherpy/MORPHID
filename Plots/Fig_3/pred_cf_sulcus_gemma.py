@@ -5,16 +5,18 @@
 Sulcus acusticus feature evaluation & confusion matrix (Gemma)
 
 Preprocessing:
-- Same as original script:
-  * Extract 'Sulcus acusticus:' text
-  * Map to fixed short labels via LABEL_MAP
-  * Build crosstab and row-normalize
+- Extract 'Sulcus acusticus:' text
+- Map to fixed short labels via LABEL_MAP
+- Build crosstab and row-normalize
 
 New:
+- Ignore 'HALLUCINATE' in reference (ground-truth) features:
+  it can appear only in generated features (prediction columns, not rows).
 - Compute classification metrics (accuracy, precision, recall, F1, classification report)
-  using the short label pairs.
+  using the short label pairs (excluding HALLUCINATE from true labels).
 - Plot a pastel blue–green confusion matrix with per-class recall bars
-  (row-normalized), saved to OUT_PNG.
+  (row-normalized), saved to OUT_PNG, using the asymmetric crosstab
+  (rows = true labels, cols = predicted labels, incl. HALLUCINATE).
 """
 
 import os
@@ -27,7 +29,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
 from sklearn.metrics import (
-    classification_report, confusion_matrix, accuracy_score,
+    classification_report, accuracy_score,
     precision_score, recall_score, f1_score
 )
 
@@ -35,8 +37,8 @@ from sklearn.metrics import (
 mpl.rcParams.update({
     "font.family": "sans-serif",
     "font.sans-serif": ["DejaVu Sans", "Arial", "Liberation Sans"],
-    "font.size": 10,        # base font size (between 5–7 pt)
-    "axes.labelsize": 10,   # axis labels
+    "font.size": 10,        # base font size
+    "axes.labelsize": 10,
     "xtick.labelsize": 10,
     "ytick.labelsize": 10,
     "legend.title_fontsize": 10,
@@ -44,11 +46,11 @@ mpl.rcParams.update({
 })
 
 # ========================= CONFIG =========================
-CSV_IN   = "/home/reshma/MORPHID/Plots/Fig_3/paired_captions_minimall_modi_gemma.csv"  # change if needed
+CSV_IN   = "/home/reshma/MORPHID/Plots/Fig_3/paired_captions_minimall_modi_gemma.csv"
 COL_GT   = "Description"
 COL_PRED = "generated_caption"
 
-OUT_DIR        = "gemma/plots"
+OUT_DIR        = "plots"
 OUT_NORM_CSV   = os.path.join(OUT_DIR, "sulcus_acusticus_cm_normalized_gemma.csv")
 OUT_PNG        = os.path.join(OUT_DIR, "sulcus_acusticus_dotmatrix_correct_vs_wrong_gemma.png")
 
@@ -57,18 +59,8 @@ OUT_REPORT_TXT   = os.path.join(OUT_DIR, "sulcus_acusticus_classification_report
 OUT_REPORT_CSV   = os.path.join(OUT_DIR, "sulcus_acusticus_classification_report_gemma.csv")
 OUT_SUMMARY_JSON = os.path.join(OUT_DIR, "sulcus_acusticus_summary_metrics_gemma.json")
 
-# Plot sizing & styles (kept for reference)
-DOT_MIN   = 8       # min marker area (pt^2)
-DOT_MAX   = 180     # max marker area (pt^2)
-FIG_DX    = 0.40    # width scale per column
-FIG_DY    = 0.35    # height scale per row
-LABEL_PAD = 6       # axis label padding
 GRID_ALPHA = 0.06
-SKIP_BELOW = 1e-6   # do not draw bubbles for (near-)zero values
-
-COLOR_CORRECT = "#1f9d55"  # green (kept)
-COLOR_WRONG   = "#d64545"  # red (kept)
-GRID_COLOR    = (0, 0, 0, GRID_ALPHA)
+GRID_COLOR = (0, 0, 0, GRID_ALPHA)
 
 # ===================== HELPERS ============================
 def extract_raw_sulcus_acusticus(text: str) -> str:
@@ -136,126 +128,112 @@ def pastel_bluegreen_cmap():
     cmap.set_under("#ffffff")
     return cmap
 
-def plot_sulcus_confusion_with_recall(
-    y_true,
-    y_pred,
-    class_names,
-    filename,
-    dpi=1500
+def plot_sulcus_confusion_with_recall_cm(
+    cm_norm: pd.DataFrame,
+    filename: str,
+    dpi: int = 1500
 ):
     """
-    Pastel blue–green confusion matrix with per-class recall bars.
-    - Rows = reference (true) sulcus features (short labels)
-    - Cols = generated (predicted) sulcus features (short labels)
-    - Values = row-normalized (%)
-    - Right side: horizontal bars showing recall (diagonal / row total)
+    Plot confusion matrix using an already row-normalized crosstab (cm_norm):
+    - cm_norm.index  = reference (true) labels (NO HALLUCINATE)
+    - cm_norm.columns = predicted labels (can include HALLUCINATE)
+    - Values = [0,1], row-normalized
+
+    Right side: horizontal bars showing per-row recall (diagonal value where
+    the same label exists as a predicted column; 0 otherwise).
     """
+    rows = list(cm_norm.index)
+    cols = list(cm_norm.columns)
+    vals = cm_norm.values
 
-    # Confusion matrix normalized by true label (row-normalized)
-    cm = confusion_matrix(
-        y_true,
-        y_pred,
-        labels=class_names,
-        normalize="true"
-    )
-
-    # Per-class recall = diagonal of row-normalized CM
-    recalls = np.diag(cm)
-
-    zero_mask = (cm == 0.0)
-    cm_masked = np.ma.masked_array(cm, mask=zero_mask)
-
+    n_rows, n_cols = vals.shape
     cmap = pastel_bluegreen_cmap()
 
-    n_classes = len(class_names)
-    # Figure size scales with number of classes
-    fig_w = max(8.0, 0.25 * n_classes + 4)
-    fig_h = max(6.0, 0.25 * n_classes + 2)
+    # Per-row recall from diagonal where possible
+    recalls = []
+    for i, rlab in enumerate(rows):
+        if rlab in cols:
+            j = cols.index(rlab)
+            recalls.append(vals[i, j])
+        else:
+            recalls.append(0.0)
+    recalls = np.array(recalls)
+
+    # For color scaling, ignore exact zeros
+    zero_mask = (vals == 0.0)
+    nonzero_vals = vals[~zero_mask]
+    if nonzero_vals.size > 0:
+        vmax = max(np.percentile(nonzero_vals, 98), 0.1)
+    else:
+        vmax = 1.0
+    vmin = 0.001
+
+    fig_w = max(8.0, 0.25 * n_cols + 4)
+    fig_h = max(6.0, 0.25 * n_rows + 2)
 
     fig = plt.figure(figsize=(fig_w, fig_h), dpi=dpi)
     gs = fig.add_gridspec(1, 2, width_ratios=[10, 1], wspace=0.02)
     ax = fig.add_subplot(gs[0, 0])
 
-    # choose vmax based on non-zero cells
-    if np.any(~zero_mask):
-        vmax = np.percentile(cm[~zero_mask], 98)
-        vmax = max(vmax, 0.1)
-    else:
-        vmax = 1.0
-    vmin = 0.001
+    cm_masked = np.ma.masked_array(vals, mask=zero_mask)
 
-    # Show as percent
     im = ax.imshow(
         cm_masked * 100,
         interpolation="nearest",
         cmap=cmap,
         vmin=vmin * 100,
         vmax=vmax * 100,
-        extent=(-0.5, n_classes - 0.5, n_classes - 0.5, -0.5)
+        extent=(-0.5, n_cols - 0.5, n_rows - 0.5, -0.5)
     )
 
     # Ticks & labels (x on top)
-    ax.set_xticks(np.arange(n_classes))
-    ax.set_yticks(np.arange(n_classes))
-    ax.set_xticklabels(class_names, rotation=90, fontsize=8)
-    ax.set_yticklabels(class_names, fontsize=8)
+    ax.set_xticks(np.arange(n_cols))
+    ax.set_yticks(np.arange(n_rows))
+    ax.set_xticklabels(cols, rotation=90, fontsize=8)
+    ax.set_yticklabels(rows, fontsize=8)
 
     ax.xaxis.set_ticks_position('top')
     ax.xaxis.set_label_position('top')
     ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
 
-    ax.set_title("Generated features", fontsize=10, pad=6)
-    ax.set_ylabel("Reference features", fontsize=10)
+    # ax.set_title("Generated features", fontsize=10, pad=6)
+    # ax.set_ylabel("Reference features", fontsize=10)
 
     # Minor gridlines
-    ax.set_xticks(np.arange(-.5, n_classes, 1), minor=True)
-    ax.set_yticks(np.arange(-.5, n_classes, 1), minor=True)
+    ax.set_xticks(np.arange(-.5, n_cols, 1), minor=True)
+    ax.set_yticks(np.arange(-.5, n_rows, 1), minor=True)
     ax.tick_params(which="minor", bottom=False, left=False)
     for spine in ax.spines.values():
         spine.set_visible(False)
 
     # Annotate non-zero cells
-    if np.any(~zero_mask):
-        max_val = np.nanmax(cm)
+    if nonzero_vals.size > 0:
+        max_val = float(np.nanmax(nonzero_vals))
     else:
         max_val = 0.0
     thr = 0.6 * max_val
 
-    for i in range(n_classes):
-        for j in range(n_classes):
-            if cm[i, j] > 0:
-                color = "white" if cm[i, j] > thr else "black"
+    for i in range(n_rows):
+        for j in range(n_cols):
+            if vals[i, j] > 0:
+                color = "white" if vals[i, j] > thr else "black"
                 ax.text(
-                    j, i, f"{cm[i, j] * 100:.1f}%",
+                    j, i, f"{vals[i, j] * 100:.1f}%",
                     ha="center", va="center",
                     fontsize=7, color=color
                 )
 
-    # Colorbar placed above the matrix
-    fig.canvas.draw()
-    # bbox = ax.get_position()
-    # cb_width  = 0.20
-    # cb_height = 0.015
-    # cb_left   = bbox.x0
-    # cb_bottom = bbox.y1 + cb_height * 1.8
-    # cb_ax = fig.add_axes([cb_left, cb_bottom, cb_width, cb_height])
-    # cbar = plt.colorbar(im, cax=cb_ax, orientation="horizontal")
-    # cbar.ax.tick_params(labelsize=7, pad=1)
-    # cbar.set_label("Percent (row-normalized)", fontsize=7, labelpad=2)
-
     # Right-side recall bars
     ax_bar = fig.add_subplot(gs[0, 1], sharey=ax)
-    # Background bar (1.0)
     ax_bar.barh(
-        np.arange(n_classes),
-        [1.0] * n_classes,
+        np.arange(n_rows),
+        [1.0] * n_rows,
         height=0.2,
         color="#e5e7eb",
         edgecolor="none"
     )
-    # Actual recall
     ax_bar.barh(
-        np.arange(n_classes),
+        np.arange(n_rows),
         recalls,
         height=0.2,
         color="#1d678f",
@@ -307,6 +285,13 @@ filtered = filtered[
     (filtered["sulcus_acusticus_gen_lbl"] != "")
 ].copy()
 
+# ===== NEW: Remove HALLUCINATE from reference labels (GT only) =====
+IGNORE_REF = {"HALLUCINATE"}
+before = len(filtered)
+filtered = filtered[~filtered["sulcus_acusticus_gt_lbl"].isin(IGNORE_REF)].copy()
+after = len(filtered)
+print(f"Removed {before - after} rows with hallucinated reference labels.")
+
 # Crosstab (counts) using the short labels
 cm_counts = pd.crosstab(
     filtered["sulcus_acusticus_gt_lbl"],
@@ -319,7 +304,7 @@ row_order = cm_counts.sum(axis=1).sort_values(ascending=False).index.tolist()
 col_order = cm_counts.sum(axis=0).sort_values(ascending=False).index.tolist()
 cm_counts = cm_counts.loc[row_order, col_order]
 
-# Row-normalized matrix
+# Row-normalized matrix for plotting
 cm_norm = row_normalize(cm_counts)
 cm_norm.to_csv(OUT_NORM_CSV, index=True)
 
@@ -327,22 +312,27 @@ rows = cm_norm.index.tolist()
 cols = cm_norm.columns.tolist()
 vals = cm_norm.values
 
-# ===================== METRICS (NEW) ======================
-# Use the short-label pairs to compute metrics
+# ===================== METRICS ============================
+# Use the short-label pairs to compute metrics (excluding HALLUCINATE in GT)
 y_true = filtered["sulcus_acusticus_gt_lbl"].values
 y_pred = filtered["sulcus_acusticus_gen_lbl"].values
 
-# Class names = sorted union of all labels seen in true or predicted
-class_names = sorted(list(set(y_true) | set(y_pred)))
+# Class names = unique true labels only (no HALLUCINATE)
+class_names = sorted(list(pd.unique(y_true)))
 
-# Overall metrics (macro)
 acc  = accuracy_score(y_true, y_pred)
-prec = precision_score(y_true, y_pred, labels=class_names,
-                       average="macro", zero_division=0)
-rec  = recall_score(y_true, y_pred, labels=class_names,
-                    average="macro", zero_division=0)
-f1   = f1_score(y_true, y_pred, labels=class_names,
-                average="macro", zero_division=0)
+prec = precision_score(
+    y_true, y_pred, labels=class_names,
+    average="macro", zero_division=0
+)
+rec  = recall_score(
+    y_true, y_pred, labels=class_names,
+    average="macro", zero_division=0
+)
+f1   = f1_score(
+    y_true, y_pred, labels=class_names,
+    average="macro", zero_division=0
+)
 
 print("\n=== Sulcus acusticus Feature Metrics (Gemma) ===")
 print(f"Top-1 Accuracy    : {acc:.4f}")
@@ -383,11 +373,9 @@ summary = {
 with open(OUT_SUMMARY_JSON, "w") as f:
     json.dump(summary, f, indent=2)
 
-# ===================== PLOT (NEW STYLE) ===================
-plot_sulcus_confusion_with_recall(
-    y_true=y_true,
-    y_pred=y_pred,
-    class_names=class_names,
+# ===================== PLOT (USING CM NORM) ===============
+plot_sulcus_confusion_with_recall_cm(
+    cm_norm=cm_norm,
     filename=OUT_PNG
 )
 

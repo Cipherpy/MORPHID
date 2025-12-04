@@ -1,0 +1,14 @@
+{
+  "num_classes": 3,
+  "classes": [
+    "funnel-like",
+    "tubular",
+    "discoidal"
+  ],
+  "metrics": {
+    "accuracy_top1": 0.7909319899244333,
+    "precision_macro": 0.8178092501368365,
+    "recall_macro": 0.8168380903547329,
+    "f1_macro": 0.7830951676311727
+  }
+}

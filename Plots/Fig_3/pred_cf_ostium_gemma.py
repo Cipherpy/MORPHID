@@ -2,21 +2,23 @@
 # -*- coding: utf-8 -*-
 
 """
-Sulcus acusticus feature evaluation & confusion matrix (Gemma)
+Ostium feature evaluation & confusion matrix (Gemma)
 
 Preprocessing:
-- Extract 'Sulcus acusticus:' text
-- Map to fixed short labels via LABEL_MAP
+- Extract 'Ostium:' text from GT and generated captions
 - Build crosstab and row-normalize
 
 New:
-- Ignore 'HALLUCINATE' in reference (ground-truth) features:
-  it can appear only in generated features (prediction columns, not rows).
+- Map hallucinated generated feature "blunt" -> "HALLUCINATE"
 - Compute classification metrics (accuracy, precision, recall, F1, classification report)
-  using the short label pairs (excluding HALLUCINATE from true labels).
+  using the raw ostium phrase pairs.
 - Plot a pastel blue–green confusion matrix with per-class recall bars
-  (row-normalized), saved to OUT_PNG, using the asymmetric crosstab
-  (rows = true labels, cols = predicted labels, incl. HALLUCINATE).
+  (row-normalized), saved to OUT_PNG.
+- For plotting, use compact code labels for shapes:
+    funnel-like -> FN-SHAPE___
+    tubular     -> TB-SHAPE___
+    discoidal   -> DS-SHAPE___
+    HALLUCINATE -> HALLUCINATE
 """
 
 import os
@@ -37,7 +39,7 @@ from sklearn.metrics import (
 mpl.rcParams.update({
     "font.family": "sans-serif",
     "font.sans-serif": ["DejaVu Sans", "Arial", "Liberation Sans"],
-    "font.size": 10,        # base font size
+    "font.size": 10,
     "axes.labelsize": 10,
     "xtick.labelsize": 10,
     "ytick.labelsize": 10,
@@ -46,63 +48,53 @@ mpl.rcParams.update({
 })
 
 # ========================= CONFIG =========================
-CSV_IN   = "/home/reshma/MORPHID/Plots/Fig_3/output_filtered copy.csv"
+CSV_IN   = "/home/reshma/MORPHID/Plots/Fig_3/paired_captions_minimall_modi_gemma.csv"
 COL_GT   = "Description"
 COL_PRED = "generated_caption"
 
-OUT_DIR        = "plots"
-OUT_NORM_CSV   = os.path.join(OUT_DIR, "sulcus_acusticus_cm_normalized_llama.csv")
-OUT_PNG        = os.path.join(OUT_DIR, "sulcus_acusticus_dotmatrix_correct_vs_wrong_llama.png")
-    
-# Extra outputs for metrics
-OUT_REPORT_TXT   = os.path.join(OUT_DIR, "sulcus_acusticus_classification_report_llama.txt")
-OUT_REPORT_CSV   = os.path.join(OUT_DIR, "sulcus_acusticus_classification_report_llama.csv")
-OUT_SUMMARY_JSON = os.path.join(OUT_DIR, "sulcus_acusticus_summary_metrics_llama.json")
+OUT_DIR        = "plots/"
+OUT_NORM_CSV   = os.path.join(OUT_DIR, "ostium_cm_normalized.csv")
+OUT_PNG        = os.path.join(OUT_DIR, "ostium_dotmatrix_correct_vs_wrong_gemma.png")
 
+# Extra outputs for metrics
+OUT_REPORT_TXT   = os.path.join(OUT_DIR, "ostium_classification_report_gemma.txt")
+OUT_REPORT_CSV   = os.path.join(OUT_DIR, "ostium_classification_report_gemma.csv")
+OUT_SUMMARY_JSON = os.path.join(OUT_DIR, "ostium_summary_metrics_gemma.json")
+
+# Plot styling (used for fig sizing)
+FIG_DX    = 0.40
+FIG_DY    = 0.35
+LABEL_PAD = 6
 GRID_ALPHA = 0.06
 GRID_COLOR = (0, 0, 0, GRID_ALPHA)
 
-# ===================== HELPERS ============================
-def extract_raw_sulcus_acusticus(text: str) -> str:
-    """Extract exact raw text after 'Sulcus acusticus:' up to the next period or end."""
-    if pd.isna(text):
-        return ""
-    m = re.search(r"Sulcus\s+acusticus:\s*([^\.]*)", str(text), flags=re.IGNORECASE)
-    return m.group(1).strip() if m else ""
-
-# 11-char labels for all features (including hallucinated one)
-LABEL_MAP = {
-    "heterosulcoid, ostial, median":        "HS-OS-MED__",
-    "heterosulcoid, ostial, inframedian":   "HS-OS-INF__",
-    "heterosulcoid, ostial, supramedian":   "HS-OS-SUP__",
-    "pseudo-archaesulcoid, mesial":         "PA-MESIAL__",
-    "pseudo-archaesulcoid, ostial, median": "PA-OS-MED__",
-    "homosulcoid, para-ostial, median":     "HO-PO-MED__",
-    "heterosulcoid, ostio-caudal, median":  "HS-OC-MED__",
-    "heterosulcoid, ostial, median to supramedian": "HS-OS-M2S__",
-    "homosulcoid, mesial, median":          "HO-MESIAL-MD",  # short code
-    "Not visible":                          "NOTVISIBLE_",
-    # hallucinated / wrong feature:
-    "crenate ventral margins":              "HALLUCINATE",
+# Code labels just for plotting
+PLOT_LABEL_MAP = {
+    "funnel-like": "FN___",  # funnel
+    "tubular":     "TB___",
+    "discoidal":   "DS___",
+    "HALLUCINATE": "HALLUCINATE",
 }
 
-def to_short_label(raw: str) -> str:
-    """
-    Convert raw sulcus description to short code:
-    - use LABEL_MAP if available
-    - otherwise truncate cleaned raw text to max 11 characters
-    """
-    if pd.isna(raw):
+# ===================== HELPERS ============================
+def extract_raw_ostium(text: str) -> str:
+    """Extract exact raw text after 'Ostium:' up to the next period or end."""
+    if pd.isna(text):
         return ""
-    raw = str(raw).strip()
-    if raw in LABEL_MAP:
-        return LABEL_MAP[raw]
-    # fallback: remove commas, collapse spaces, truncate
-    tmp = re.sub(r"[,\s]+", " ", raw)
-    tmp = tmp.strip()
-    if len(tmp) > 11:
-        tmp = tmp[:11]
-    return tmp
+    m = re.search(r"Ostium:\s*([^\.]*)", str(text), flags=re.IGNORECASE)
+    return m.group(1).strip() if m else ""
+
+def clean_generated_feature(x: str) -> str:
+    """
+    Convert hallucinated generated features to standard labels.
+    - 'blunt' (any case) -> 'HALLUCINATE'
+    """
+    if pd.isna(x):
+        return ""
+    s = str(x).strip()
+    if s.lower() == "blunt":
+        return "HALLUCINATE"
+    return s
 
 def row_normalize(df_counts: pd.DataFrame) -> pd.DataFrame:
     """Row-normalize a count matrix to [0,1]."""
@@ -111,7 +103,7 @@ def row_normalize(df_counts: pd.DataFrame) -> pd.DataFrame:
     return norm.fillna(0.0)
 
 def pastel_bluegreen_cmap():
-    """Pastel blue–green colormap (same style as other features)."""
+    """Pastel blue–green colormap."""
     stops = [
         (0.00, "#ffffff"),
         (0.05, "#f2fdfa"),
@@ -128,28 +120,33 @@ def pastel_bluegreen_cmap():
     cmap.set_under("#ffffff")
     return cmap
 
-def plot_sulcus_confusion_with_recall_cm(
+def plot_ostium_confusion_with_recall(
     cm_norm: pd.DataFrame,
     filename: str,
     dpi: int = 1500
 ):
     """
-    Plot confusion matrix using an already row-normalized crosstab (cm_norm):
-    - cm_norm.index  = reference (true) labels (NO HALLUCINATE)
-    - cm_norm.columns = predicted labels (can include HALLUCINATE)
+    Plot confusion matrix given a row-normalized pandas DataFrame cm_norm:
+    - Index = rows = reference features
+    - Columns = predicted features (can include predicted-only like 'HALLUCINATE')
     - Values = [0,1], row-normalized
 
-    Right side: horizontal bars showing per-row recall (diagonal value where
-    the same label exists as a predicted column; 0 otherwise).
+    Adds per-row recall bars on the right:
+    - Recall for a row = diagonal value if the same label exists as a column,
+      else 0.
     """
     rows = list(cm_norm.index)
     cols = list(cm_norm.columns)
-    vals = cm_norm.values
+    vals = cm_norm.values  # shape: (n_rows, n_cols)
+
+    # Plot labels: map to codes where available
+    rows_plot = [PLOT_LABEL_MAP.get(r, r) for r in rows]
+    cols_plot = [PLOT_LABEL_MAP.get(c, c) for c in cols]
 
     n_rows, n_cols = vals.shape
     cmap = pastel_bluegreen_cmap()
 
-    # Per-row recall from diagonal where possible
+    # Compute recall per row from diagonal where possible
     recalls = []
     for i, rlab in enumerate(rows):
         if rlab in cols:
@@ -175,6 +172,7 @@ def plot_sulcus_confusion_with_recall_cm(
     gs = fig.add_gridspec(1, 2, width_ratios=[10, 1], wspace=0.02)
     ax = fig.add_subplot(gs[0, 0])
 
+    # Mask zeros for nicer appearance
     cm_masked = np.ma.masked_array(vals, mask=zero_mask)
 
     im = ax.imshow(
@@ -189,8 +187,8 @@ def plot_sulcus_confusion_with_recall_cm(
     # Ticks & labels (x on top)
     ax.set_xticks(np.arange(n_cols))
     ax.set_yticks(np.arange(n_rows))
-    ax.set_xticklabels(cols, rotation=90, fontsize=8)
-    ax.set_yticklabels(rows, fontsize=8)
+    ax.set_xticklabels(cols_plot, rotation=0, fontsize=8)
+    ax.set_yticklabels(rows_plot, fontsize=8)
 
     ax.xaxis.set_ticks_position('top')
     ax.xaxis.set_label_position('top')
@@ -223,7 +221,7 @@ def plot_sulcus_confusion_with_recall_cm(
                     fontsize=7, color=color
                 )
 
-    # Right-side recall bars
+    # Right-side recall bars (one per row)
     ax_bar = fig.add_subplot(gs[0, 1], sharey=ax)
     ax_bar.barh(
         np.arange(n_rows),
@@ -258,7 +256,7 @@ def plot_sulcus_confusion_with_recall_cm(
         ax_bar.spines[spine].set_visible(False)
 
     plt.tight_layout(pad=1.2)
-    plt.savefig(filename, bbox_inches="tight", dpi=dpi, transparent=True)
+    plt.savefig(filename, bbox_inches="tight", dpi=dpi,transparent=True)
     plt.close(fig)
 
 # ===================== LOAD & PREP ========================
@@ -267,35 +265,22 @@ os.makedirs(OUT_DIR, exist_ok=True)
 df = pd.read_csv(CSV_IN)
 
 # Parse GT and predicted raw phrases
-df["sulcus_acusticus_gt_raw"]  = df[COL_GT].apply(extract_raw_sulcus_acusticus)
-df["sulcus_acusticus_gen_raw"] = df[COL_PRED].apply(extract_raw_sulcus_acusticus)
+df["ostium_gt_raw"]  = df[COL_GT].apply(extract_raw_ostium)
+df["ostium_gen_raw"] = (
+    df[COL_PRED]
+    .apply(extract_raw_ostium)
+    .apply(clean_generated_feature)  # "blunt" -> "HALLUCINATE"
+)
 
 filtered = df[
-    (df["sulcus_acusticus_gt_raw"]  != "") &
-    (df["sulcus_acusticus_gen_raw"] != "")
+    (df["ostium_gt_raw"]  != "") &
+    (df["ostium_gen_raw"] != "")
 ].copy()
 
-# Apply short labels
-filtered["sulcus_acusticus_gt_lbl"]  = filtered["sulcus_acusticus_gt_raw"].apply(to_short_label)
-filtered["sulcus_acusticus_gen_lbl"] = filtered["sulcus_acusticus_gen_raw"].apply(to_short_label)
-
-# Drop rows that became empty
-filtered = filtered[
-    (filtered["sulcus_acusticus_gt_lbl"]  != "") &
-    (filtered["sulcus_acusticus_gen_lbl"] != "")
-].copy()
-
-# ===== NEW: Remove HALLUCINATE from reference labels (GT only) =====
-IGNORE_REF = {"HALLUCINATE"}
-before = len(filtered)
-filtered = filtered[~filtered["sulcus_acusticus_gt_lbl"].isin(IGNORE_REF)].copy()
-after = len(filtered)
-print(f"Removed {before - after} rows with hallucinated reference labels.")
-
-# Crosstab (counts) using the short labels
+# Crosstab (counts): rows = GT, cols = predicted
 cm_counts = pd.crosstab(
-    filtered["sulcus_acusticus_gt_lbl"],
-    filtered["sulcus_acusticus_gen_lbl"],
+    filtered["ostium_gt_raw"],
+    filtered["ostium_gen_raw"],
     dropna=False
 )
 
@@ -304,21 +289,20 @@ row_order = cm_counts.sum(axis=1).sort_values(ascending=False).index.tolist()
 col_order = cm_counts.sum(axis=0).sort_values(ascending=False).index.tolist()
 cm_counts = cm_counts.loc[row_order, col_order]
 
-# Row-normalized matrix for plotting
+# Row-normalized matrix (what we plot)
 cm_norm = row_normalize(cm_counts)
 cm_norm.to_csv(OUT_NORM_CSV, index=True)
 
 rows = cm_norm.index.tolist()
 cols = cm_norm.columns.tolist()
-vals = cm_norm.values
 
 # ===================== METRICS ============================
-# Use the short-label pairs to compute metrics (excluding HALLUCINATE in GT)
-y_true = filtered["sulcus_acusticus_gt_lbl"].values
-y_pred = filtered["sulcus_acusticus_gen_lbl"].values
+# Use raw ostium phrases for metrics
+y_true = filtered["ostium_gt_raw"].values
+y_pred = filtered["ostium_gen_raw"].values
 
-# Class names = unique true labels only (no HALLUCINATE)
-class_names = sorted(list(pd.unique(y_true)))
+# Labels limited to rows (true classes) for macro metrics
+class_names = rows
 
 acc  = accuracy_score(y_true, y_pred)
 prec = precision_score(
@@ -334,13 +318,13 @@ f1   = f1_score(
     average="macro", zero_division=0
 )
 
-print("\n=== Sulcus acusticus Feature Metrics (Gemma) ===")
+print("\n=== Ostium Feature Metrics (Gemma) ===")
 print(f"Top-1 Accuracy    : {acc:.4f}")
 print(f"Precision (macro) : {prec:.4f}")
 print(f"Recall  (macro)   : {rec:.4f}")
 print(f"F1-score (macro)  : {f1:.4f}")
 
-# Classification report
+# Classification report (per true class)
 report_txt = classification_report(
     y_true, y_pred,
     labels=class_names,
@@ -373,8 +357,8 @@ summary = {
 with open(OUT_SUMMARY_JSON, "w") as f:
     json.dump(summary, f, indent=2)
 
-# ===================== PLOT (USING CM NORM) ===============
-plot_sulcus_confusion_with_recall_cm(
+# ===================== PLOT ===============================
+plot_ostium_confusion_with_recall(
     cm_norm=cm_norm,
     filename=OUT_PNG
 )

@@ -1,0 +1,14 @@
+              precision    recall  f1-score   support
+
+ HO-PO-MED__       0.00      0.00      0.00        24
+ HS-OC-MED__       0.44      0.78      0.56         9
+ HS-OS-INF__       0.55      0.31      0.40       204
+ HS-OS-MED__       0.83      0.92      0.87       846
+ HS-OS-SUP__       0.66      0.84      0.74        69
+ NOTVISIBLE_       0.24      0.29      0.26        17
+ PA-MESIAL__       0.00      0.00      0.00        48
+ PA-OS-MED__       0.71      1.00      0.83        39
+
+   micro avg       0.77      0.76      0.77      1256
+   macro avg       0.43      0.52      0.46      1256
+weighted avg       0.71      0.76      0.73      1256

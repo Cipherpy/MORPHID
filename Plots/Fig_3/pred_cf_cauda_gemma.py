@@ -2,25 +2,27 @@
 # -*- coding: utf-8 -*-
 
 """
-Cauda feature evaluation & confusion matrix
+Cauda feature evaluation & confusion matrix (Gemma)
 
 Preprocessing:
-- Same as before: extract cauda text, clean labels, build crosstab, row-normalize.
+- Extract 'Cauda:' text from GT and generated captions
+- Clean feature labels (remove 'tubular', trailing 'curved', leading commas, limit length)
+- Build crosstab and row-normalize (saved as CSV)
 
 New:
 - Compute classification metrics (accuracy, precision, recall, F1, classification report)
   using the cleaned label pairs.
-- Plot a pastel blue-green confusion matrix with per-class recall bars
-  (row-normalized, like before), saved to OUT_PNG.
+- Plot a pastel blue–green confusion matrix with per-class recall bars
+  (row-normalized via sklearn.confusion_matrix), saved to OUT_PNG.
 """
 
 import os
 import re
+import json
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 from matplotlib.colors import LinearSegmentedColormap
 
 from sklearn.metrics import (
@@ -32,7 +34,7 @@ from sklearn.metrics import (
 mpl.rcParams.update({
     "font.family": "sans-serif",
     "font.sans-serif": ["DejaVu Sans", "Arial", "Liberation Sans"],
-    "font.size": 9,        # slightly smaller base font
+    "font.size": 9,
     "axes.labelsize": 9,
     "xtick.labelsize": 9,
     "ytick.labelsize": 9,
@@ -47,42 +49,28 @@ COL_PRED = "generated_caption"
 
 OUT_DIR        = "plots/"
 OUT_NORM_CSV   = os.path.join(OUT_DIR, "cauda_cm_normalized_gemma.csv")
-OUT_PNG        = os.path.join(OUT_DIR, "cauda_dotmatrix_correct_vs_wrong_gemma.png")  # filename kept for compatibility
+OUT_PNG        = os.path.join(OUT_DIR, "cauda_confusion_with_recall_gemma.png")
 
-# extra outputs for metrics
 OUT_REPORT_TXT   = os.path.join(OUT_DIR, "cauda_classification_report_gemma.txt")
 OUT_REPORT_CSV   = os.path.join(OUT_DIR, "cauda_classification_report_gemma.csv")
 OUT_SUMMARY_JSON = os.path.join(OUT_DIR, "cauda_summary_metrics_gemma.json")
 
-# Plot sizing & styles (only used indirectly now)
-DOT_MIN   = 3       # kept for reference
-DOT_MAX   = 40      # kept for reference
-
-FIG_DX    = 0.03    # not used directly in new plot, but kept
-FIG_DY    = 0.03
-
-LABEL_PAD = 4
-GRID_ALPHA = 0.06
-SKIP_BELOW = 1e-6   # kept
-
-COLOR_CORRECT = "#1f9d55"  # kept
-COLOR_WRONG   = "#d64545"
-GRID_COLOR    = (0, 0, 0, GRID_ALPHA)
-
 # ===================== HELPERS ============================
-def extract_raw_ostium(text: str) -> str:
+def extract_raw_cauda(text: str) -> str:
     """Extract exact raw text after 'Cauda:' up to the next period or end."""
     if pd.isna(text):
         return ""
     m = re.search(r"Cauda:\s*([^\.]*)", str(text), flags=re.IGNORECASE)
     return m.group(1).strip() if m else ""
 
+
 def clean_feature_label(s: str) -> str:
     """
-    Clean cauda feature phrases for plotting:
+    Clean cauda feature phrases for modeling & plotting:
     - remove 'tubular' (and its following comma/space)
     - remove trailing 'curved'
-    - remove leading commas
+    - remove leading commas / punctuation
+    - normalize spaces
     - trim to max 15 characters
     """
     if pd.isna(s):
@@ -92,23 +80,21 @@ def clean_feature_label(s: str) -> str:
     # remove 'tubular' (case-insensitive) and optional following comma/space
     s = re.sub(r'\b[Tt]ubular\b,?\s*', '', s)
 
-    # remove trailing 'curved' (e.g., 'strongly curved' -> 'strongly')
+    # remove trailing 'curved' (e.g. 'strongly curved' -> 'strongly')
     s = re.sub(r'\s*[Cc]urved\.?$', '', s)
 
-    # remove leading commas and surrounding spaces
+    # remove leading commas / punctuation
     s = s.lstrip(",;:- ").strip()
 
-    # normalise spaces
-    s = re.sub(r'\s+', ' ', s)
+    # normalize spaces
+    s = re.sub(r'\s+', ' ', s).strip()
 
-    # final strip
-    s = s.strip()
-
-    # limit character length to 15
+    # limit character length
     if len(s) > 15:
         s = s[:15]
 
     return s
+
 
 def row_normalize(df_counts: pd.DataFrame) -> pd.DataFrame:
     """Row-normalize a count matrix to [0,1]."""
@@ -116,8 +102,9 @@ def row_normalize(df_counts: pd.DataFrame) -> pd.DataFrame:
         norm = df_counts.div(df_counts.sum(axis=1).replace(0, np.nan), axis=0)
     return norm.fillna(0.0)
 
+
 def pastel_bluegreen_cmap():
-    """Pastel blue–green colormap similar to the ViT eval script."""
+    """Pastel blue–green colormap (same style as ostium / sulcus)."""
     stops = [
         (0.00, "#ffffff"),
         (0.05, "#f2fdfa"),
@@ -133,6 +120,7 @@ def pastel_bluegreen_cmap():
     cmap.set_bad("#cbd5e1")   # gray for masked zeros
     cmap.set_under("#ffffff")
     return cmap
+
 
 def plot_cauda_confusion_with_recall(
     y_true,
@@ -164,9 +152,9 @@ def plot_cauda_confusion_with_recall(
     cm_masked = np.ma.masked_array(cm, mask=zero_mask)
 
     cmap = pastel_bluegreen_cmap()
-
     n_classes = len(class_names)
-    # Figure size scales a bit with number of classes
+
+    # Scale figure with number of classes
     fig_w = max(8.0, 0.25 * n_classes + 4)
     fig_h = max(6.0, 0.25 * n_classes + 2)
 
@@ -202,8 +190,8 @@ def plot_cauda_confusion_with_recall(
     ax.xaxis.set_label_position('top')
     ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
 
-    ax.set_title("Generated features", fontsize=9, pad=6)
-    ax.set_ylabel("Reference features", fontsize=9)
+    ax.set_title("Generated cauda features", fontsize=9, pad=6)
+    ax.set_ylabel("Reference cauda features", fontsize=9)
 
     # Minor gridlines
     ax.set_xticks(np.arange(-.5, n_classes, 1), minor=True)
@@ -229,21 +217,8 @@ def plot_cauda_confusion_with_recall(
                     fontsize=6.5, color=color
                 )
 
-    # Colorbar placed above the matrix
-    fig.canvas.draw()
-    # bbox = ax.get_position()
-    # cb_width  = 0.20
-    # cb_height = 0.015
-    # cb_left   = bbox.x0
-    # cb_bottom = bbox.y1 + cb_height * 1.8
-    # cb_ax = fig.add_axes([cb_left, cb_bottom, cb_width, cb_height])
-    # cbar = plt.colorbar(im, cax=cb_ax, orientation="horizontal")
-    # cbar.ax.tick_params(labelsize=7, pad=1)
-    # cbar.set_label("Percent (row-normalized)", fontsize=7, labelpad=2)
-
     # Right-side recall bars
     ax_bar = fig.add_subplot(gs[0, 1], sharey=ax)
-    # Background bar (1.0)
     ax_bar.barh(
         np.arange(n_classes),
         [1.0] * n_classes,
@@ -251,7 +226,6 @@ def plot_cauda_confusion_with_recall(
         color="#e5e7eb",
         edgecolor="none"
     )
-    # Actual recall
     ax_bar.barh(
         np.arange(n_classes),
         recalls,
@@ -275,11 +249,13 @@ def plot_cauda_confusion_with_recall(
     ax_bar.set_xticklabels(["0", "0.5", "1"], fontsize=7, color="#1e293b")
     ax_bar.set_xlabel("Recall", fontsize=8, color="#1e293b")
     for spine in ["top", "right", "bottom", "left"]:
-        ax_bar.spines[spine].set_visible(False)
+        spine_obj = ax_bar.spines[spine]
+        spine_obj.set_visible(False)
 
     plt.tight_layout(pad=1.2)
     plt.savefig(filename, bbox_inches="tight", dpi=dpi, transparent=True)
     plt.close(fig)
+
 
 # ===================== LOAD & PREP ========================
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -287,15 +263,15 @@ os.makedirs(OUT_DIR, exist_ok=True)
 df = pd.read_csv(CSV_IN)
 
 # Parse GT and predicted raw phrases
-df["cauda_gt_raw"]  = df[COL_GT].apply(extract_raw_ostium)
-df["cauda_gen_raw"] = df[COL_PRED].apply(extract_raw_ostium)
+df["cauda_gt_raw"]  = df[COL_GT].apply(extract_raw_cauda)
+df["cauda_gen_raw"] = df[COL_PRED].apply(extract_raw_cauda)
 
 filtered = df[
     (df["cauda_gt_raw"]  != "") &
     (df["cauda_gen_raw"] != "")
 ].copy()
 
-# Clean labels (remove 'tubular', trailing 'curved', leading comma, and limit to 15 chars)
+# Clean labels (remove 'tubular', trailing 'curved', leading comma, etc.)
 filtered["cauda_gt_label"]  = filtered["cauda_gt_raw"].apply(clean_feature_label)
 filtered["cauda_gen_label"] = filtered["cauda_gen_raw"].apply(clean_feature_label)
 
@@ -305,35 +281,29 @@ filtered = filtered[
     (filtered["cauda_gen_label"] != "")
 ].copy()
 
-# Crosstab (counts) on cleaned labels (as before)
+# Crosstab (counts) on cleaned labels (for CSV)
 cm_counts = pd.crosstab(
     filtered["cauda_gt_label"],
     filtered["cauda_gen_label"],
     dropna=False
 )
 
-# Order rows/cols by total counts for readability (as before)
+# Order rows/cols by total counts for readability
 row_order = cm_counts.sum(axis=1).sort_values(ascending=False).index.tolist()
 col_order = cm_counts.sum(axis=0).sort_values(ascending=False).index.tolist()
 cm_counts = cm_counts.loc[row_order, col_order]
 
-# Row-normalized matrix (as before)
+# Row-normalized crosstab (for CSV output)
 cm_norm = row_normalize(cm_counts)
 cm_norm.to_csv(OUT_NORM_CSV, index=True)
 
-rows = cm_norm.index.tolist()
-cols = cm_norm.columns.tolist()
-vals = cm_norm.values
-
-# ===================== METRICS (NEW) ======================
-# Use the per-sample pairs to compute metrics
+# ===================== METRICS ======================
 y_true = filtered["cauda_gt_label"].values
 y_pred = filtered["cauda_gen_label"].values
 
-# Class names = sorted union of all labels seen in true or predicted
+# Class names = sorted union of labels present in true or predicted
 class_names = sorted(list(set(y_true) | set(y_pred)))
 
-# Overall metrics (macro, like in ViT script)
 acc  = accuracy_score(y_true, y_pred)
 prec = precision_score(y_true, y_pred, labels=class_names,
                        average="macro", zero_division=0)
@@ -342,13 +312,13 @@ rec  = recall_score(y_true, y_pred, labels=class_names,
 f1   = f1_score(y_true, y_pred, labels=class_names,
                 average="macro", zero_division=0)
 
-print("\n=== Cauda Feature Metrics ===")
+print("\n=== Cauda Feature Metrics (Gemma) ===")
 print(f"Top-1 Accuracy    : {acc:.4f}")
 print(f"Precision (macro) : {prec:.4f}")
 print(f"Recall (macro)    : {rec:.4f}")
 print(f"F1-score (macro)  : {f1:.4f}")
 
-# Classification report (per-feature)
+# Classification report
 report_txt = classification_report(
     y_true, y_pred,
     labels=class_names,
@@ -367,8 +337,7 @@ report_dict = classification_report(
 )
 pd.DataFrame(report_dict).transpose().to_csv(OUT_REPORT_CSV)
 
-# Small JSON summary
-import json
+# JSON summary
 summary = {
     "num_classes": len(class_names),
     "classes": class_names,
@@ -382,9 +351,7 @@ summary = {
 with open(OUT_SUMMARY_JSON, "w") as f:
     json.dump(summary, f, indent=2)
 
-# ===================== PLOT (NEW STYLE) ===================
-# We plot a *square* confusion matrix using class_names,
-# independent of cm_norm’s row/col ordering.
+# ===================== PLOT =======================
 plot_cauda_confusion_with_recall(
     y_true=y_true,
     y_pred=y_pred,
@@ -392,9 +359,11 @@ plot_cauda_confusion_with_recall(
     filename=OUT_PNG
 )
 
-print(f"Saved:\n"
-      f"- Normalized CM (crosstab, row-normalized): {OUT_NORM_CSV}\n"
-      f"- Confusion matrix figure: {OUT_PNG}\n"
-      f"- Classification report TXT: {OUT_REPORT_TXT}\n"
-      f"- Classification report CSV: {OUT_REPORT_CSV}\n"
-      f"- Summary metrics JSON: {OUT_SUMMARY_JSON}")
+print(
+    f"Saved:\n"
+    f"- Normalized CM (crosstab, row-normalized): {OUT_NORM_CSV}\n"
+    f"- Confusion matrix figure: {OUT_PNG}\n"
+    f"- Classification report TXT: {OUT_REPORT_TXT}\n"
+    f"- Classification report CSV: {OUT_REPORT_CSV}\n"
+    f"- Summary metrics JSON: {OUT_SUMMARY_JSON}"
+)
