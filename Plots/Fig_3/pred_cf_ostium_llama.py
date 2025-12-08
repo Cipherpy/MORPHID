@@ -53,7 +53,7 @@ COL_GT   = "Description"
 COL_PRED = "generated_caption"
 
 OUT_DIR        = "plots/"
-OUT_NORM_CSV   = os.path.join(OUT_DIR, "ostium_cm_normalized.csv")
+OUT_NORM_CSV   = os.path.join(OUT_DIR, "ostium_cm_normalized_llama.csv")
 OUT_PNG        = os.path.join(OUT_DIR, "ostium_dotmatrix_correct_vs_wrong_llama.png")
 
 # Extra outputs for metrics
@@ -69,11 +69,13 @@ GRID_ALPHA = 0.06
 GRID_COLOR = (0, 0, 0, GRID_ALPHA)
 
 # Code labels just for plotting
-PLOT_LABEL_MAP = {
+LABEL_MAP = {
     "funnel-like": "FN___",  # funnel
     "tubular":     "TB___",
     "discoidal":   "DS___",
     "not visible": "NOTVISIBLE_",
+    "blunt":"HALLUCINATE_",
+    "HALLUCINATE": "HALLUCINATE_",
 }
 
 # ===================== HELPERS ============================
@@ -84,17 +86,22 @@ def extract_raw_ostium(text: str) -> str:
     m = re.search(r"Ostium:\s*([^\.]*)", str(text), flags=re.IGNORECASE)
     return m.group(1).strip() if m else ""
 
-def clean_generated_feature(x: str) -> str:
+def to_short_label(raw: str) -> str:
     """
-    Convert hallucinated generated features to standard labels.
-    - 'blunt' (any case) -> 'HALLUCINATE'
+    Convert raw cauda description to short code:
+    - use LABEL_MAP if available
+    - otherwise truncate cleaned raw text to max 11 characters
     """
-    if pd.isna(x):
+    if pd.isna(raw):
         return ""
-    s = str(x).strip()
-    if s.lower() == "blunt":
-        return "HALLUCINATE"
-    return s
+    raw = str(raw).strip()
+    if raw in LABEL_MAP:
+        return LABEL_MAP[raw]
+    # fallback: remove commas, collapse spaces, truncate
+    tmp = re.sub(r"[,\s]+", " ", raw).strip()
+    if len(tmp) > 11:
+        tmp = tmp[:11]
+    return tmp
 
 def row_normalize(df_counts: pd.DataFrame) -> pd.DataFrame:
     """Row-normalize a count matrix to [0,1]."""
@@ -120,33 +127,52 @@ def pastel_bluegreen_cmap():
     cmap.set_under("#ffffff")
     return cmap
 
-def plot_ostium_confusion_with_recall(
+def row_normalize(df_counts: pd.DataFrame) -> pd.DataFrame:
+    """Row-normalize a count matrix to [0,1]."""
+    with np.errstate(invalid="ignore", divide="ignore"):
+        norm = df_counts.div(df_counts.sum(axis=1).replace(0, np.nan), axis=0)
+    return norm.fillna(0.0)
+
+def pastel_bluegreen_cmap():
+    """Pastel blue–green colormap."""
+    stops = [
+        (0.00, "#ffffff"),
+        (0.05, "#f2fdfa"),
+        (0.10, "#dff8f3"),
+        (0.20, "#baf0e4"),
+        (0.35, "#8fe0d2"),
+        (0.50, "#64cdc2"),
+        (0.70, "#39b3ae"),
+        (0.85, "#2593a3"),
+        (1.00, "#1d678f"),
+    ]
+    cmap = LinearSegmentedColormap.from_list("pastel_bluegreen_rich", stops)
+    cmap.set_bad("#cbd5e1")   # gray for masked zeros
+    cmap.set_under("#ffffff")
+    return cmap
+
+def plot_ostium_confusion_with_recall_cm(
     cm_norm: pd.DataFrame,
     filename: str,
     dpi: int = 1500
 ):
     """
-    Plot confusion matrix given a row-normalized pandas DataFrame cm_norm:
-    - Index = rows = reference features
-    - Columns = predicted features (can include predicted-only like 'HALLUCINATE')
-    - Values = [0,1], row-normalized
+    Plot confusion matrix using an already row-normalized crosstab (cm_norm):
+    - cm_norm.index   = reference (true) labels (NO HALLUCINATE)
+    - cm_norm.columns = predicted labels (can include HALLUCINATE)
+    - Values          = [0,1], row-normalized
 
-    Adds per-row recall bars on the right:
-    - Recall for a row = diagonal value if the same label exists as a column,
-      else 0.
+    Right side: horizontal bars showing per-row recall (diagonal value where
+    the same label exists as a predicted column; 0 otherwise).
     """
     rows = list(cm_norm.index)
     cols = list(cm_norm.columns)
-    vals = cm_norm.values  # shape: (n_rows, n_cols)
-
-    # Plot labels: map to codes where available
-    rows_plot = [PLOT_LABEL_MAP.get(r, r) for r in rows]
-    cols_plot = [PLOT_LABEL_MAP.get(c, c) for c in cols]
+    vals = cm_norm.values
 
     n_rows, n_cols = vals.shape
     cmap = pastel_bluegreen_cmap()
 
-    # Compute recall per row from diagonal where possible
+    # Per-row recall from diagonal where possible
     recalls = []
     for i, rlab in enumerate(rows):
         if rlab in cols:
@@ -165,14 +191,16 @@ def plot_ostium_confusion_with_recall(
         vmax = 1.0
     vmin = 0.001
 
+    # --- FIGURE SIZE: still adaptive but consistent ---
     fig_w = max(8.0, 0.25 * n_cols + 4)
     fig_h = max(6.0, 0.25 * n_rows + 2)
 
     fig = plt.figure(figsize=(fig_w, fig_h), dpi=dpi)
     gs = fig.add_gridspec(1, 2, width_ratios=[10, 1], wspace=0.02)
+
+    # ================== MAIN CONFUSION MATRIX ==================
     ax = fig.add_subplot(gs[0, 0])
 
-    # Mask zeros for nicer appearance
     cm_masked = np.ma.masked_array(vals, mask=zero_mask)
 
     im = ax.imshow(
@@ -181,26 +209,51 @@ def plot_ostium_confusion_with_recall(
         cmap=cmap,
         vmin=vmin * 100,
         vmax=vmax * 100,
-        extent=(-0.5, n_cols - 0.5, n_rows - 0.5, -0.5)
+        extent=(-0.5, n_cols - 0.5, n_rows - 0.5, -0.5),
+        aspect="auto"
     )
 
     # Ticks & labels (x on top)
     ax.set_xticks(np.arange(n_cols))
     ax.set_yticks(np.arange(n_rows))
-    ax.set_xticklabels(cols_plot, rotation=0, fontsize=8)
-    ax.set_yticklabels(rows_plot, fontsize=8)
+    ax.set_xticklabels(cols, rotation=90, fontsize=8)
+    ax.set_yticklabels(rows, fontsize=8)
 
     ax.xaxis.set_ticks_position('top')
     ax.xaxis.set_label_position('top')
-    ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
-
+    ax.tick_params(
+        axis='x',
+        which='major',
+        top=True,
+        bottom=False,
+        labeltop=True,
+        labelbottom=False,
+        length=0
+    )
+    ax.tick_params(
+        axis='y',
+        which='major',
+        left=True,
+        right=False,
+        length=0
+    )
     # ax.set_title("Generated features", fontsize=10, pad=6)
     # ax.set_ylabel("Reference features", fontsize=10)
 
-    # Minor gridlines
+    # Explicitly lock y-limits so each row is exactly 1 unit high
+    ax.set_ylim(n_rows - 0.5, -0.5)
+
+    # Minor gridlines (cell boundaries only)
     ax.set_xticks(np.arange(-.5, n_cols, 1), minor=True)
     ax.set_yticks(np.arange(-.5, n_rows, 1), minor=True)
-    ax.tick_params(which="minor", bottom=False, left=False)
+    ax.tick_params(
+        which="minor",
+        bottom=False,
+        left=False,
+        top=False,
+        right=False,
+        length=0
+    )
     for spine in ax.spines.values():
         spine.set_visible(False)
 
@@ -221,33 +274,46 @@ def plot_ostium_confusion_with_recall(
                     fontsize=7, color=color
                 )
 
-    # Right-side recall bars (one per row)
-    ax_bar = fig.add_subplot(gs[0, 1], sharey=ax)
+    # ================== RIGHT-SIDE RECALL BARS ==================
+    # NOTE: no sharey; we manually match the y-limits so it works
+    # for any number of rows (5, 9, etc.)
+    ax_bar = fig.add_subplot(gs[0, 1])
+
+    # y-positions that match the centers of the CM rows
+    y_pos = np.arange(n_rows)
+
+    # Background bar (1.0)
     ax_bar.barh(
-        np.arange(n_rows),
+        y_pos,
         [1.0] * n_rows,
-        height=0.2,
+        height=0.2,               # ~cell height; works for any n_rows
         color="#e5e7eb",
         edgecolor="none"
     )
+    # Foreground recall bar
     ax_bar.barh(
-        np.arange(n_rows),
+        y_pos,
         recalls,
         height=0.2,
         color="#1d678f",
         edgecolor="none"
     )
 
-    for i, val in enumerate(recalls):
+    # Numeric recall labels (centered on each row)
+    for y, val in zip(y_pos, recalls):
         ax_bar.text(
-            0.02, i - 0.20,
+            0.02, y-0.20,
             f"{val:.2f}",
-            va="bottom", ha="left",
+            va="center", ha="left",
             fontsize=7,
             color="#1e293b"
         )
 
     ax_bar.set_xlim(0, 1.05)
+
+    # Match y-limits to main axis → guaranteed alignment
+    ax_bar.set_ylim(n_rows - 0.5, -0.5)
+
     ax_bar.yaxis.set_visible(False)
     ax_bar.set_xticks([0, 0.5, 1.0])
     ax_bar.set_xticklabels(["0", "0.5", "1"], fontsize=7, color="#1e293b")
@@ -256,8 +322,9 @@ def plot_ostium_confusion_with_recall(
         ax_bar.spines[spine].set_visible(False)
 
     plt.tight_layout(pad=1.2)
-    plt.savefig(filename, bbox_inches="tight", dpi=dpi, transparent=True)
+    plt.savefig(filename, bbox_inches="tight", dpi=dpi)
     plt.close(fig)
+
 
 # ===================== LOAD & PREP ========================
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -266,21 +333,34 @@ df = pd.read_csv(CSV_IN)
 
 # Parse GT and predicted raw phrases
 df["ostium_gt_raw"]  = df[COL_GT].apply(extract_raw_ostium)
-df["ostium_gen_raw"] = (
-    df[COL_PRED]
-    .apply(extract_raw_ostium)
-    .apply(clean_generated_feature)  # "blunt" -> "HALLUCINATE"
-)
+df["ostium_gen_raw"] = df[COL_PRED].apply(extract_raw_ostium)
 
 filtered = df[
     (df["ostium_gt_raw"]  != "") &
     (df["ostium_gen_raw"] != "")
 ].copy()
 
-# Crosstab (counts): rows = GT, cols = predicted
+# Map to short labels
+filtered["ostium_gt_label"]  = filtered["ostium_gt_raw"].apply(to_short_label)
+filtered["ostium_gen_label"] = filtered["ostium_gen_raw"].apply(to_short_label)
+
+# Drop rows that became empty after mapping
+filtered = filtered[
+    (filtered["ostium_gt_label"]  != "") &
+    (filtered["ostium_gen_label"] != "")
+].copy()
+
+# ===== Ignore hallucinated GT labels =====
+IGNORE_REF = {"HALLUCINATE"}
+before = len(filtered)
+filtered = filtered[~filtered["ostium_gt_label"].isin(IGNORE_REF)].copy()
+after = len(filtered)
+print(f"Removed {before - after} rows with hallucinated cauda reference labels.")
+
+# Crosstab (counts) using the short labels
 cm_counts = pd.crosstab(
-    filtered["ostium_gt_raw"],
-    filtered["ostium_gen_raw"],
+    filtered["ostium_gt_label"],
+    filtered["ostium_gen_label"],
     dropna=False
 )
 
@@ -289,20 +369,21 @@ row_order = cm_counts.sum(axis=1).sort_values(ascending=False).index.tolist()
 col_order = cm_counts.sum(axis=0).sort_values(ascending=False).index.tolist()
 cm_counts = cm_counts.loc[row_order, col_order]
 
-# Row-normalized matrix (what we plot)
+# Row-normalized matrix for plotting
 cm_norm = row_normalize(cm_counts)
 cm_norm.to_csv(OUT_NORM_CSV, index=True)
 
 rows = cm_norm.index.tolist()
 cols = cm_norm.columns.tolist()
+vals = cm_norm.values
 
 # ===================== METRICS ============================
-# Use raw ostium phrases for metrics
-y_true = filtered["ostium_gt_raw"].values
-y_pred = filtered["ostium_gen_raw"].values
+# Use the short-label pairs to compute metrics (excluding HALLUCINATE in GT)
+y_true = filtered["ostium_gt_label"].values
+y_pred = filtered["ostium_gen_label"].values
 
-# Labels limited to rows (true classes) for macro metrics
-class_names = rows
+# Class names = unique true labels only (no HALLUCINATE)
+class_names = sorted(list(pd.unique(y_true)))
 
 acc  = accuracy_score(y_true, y_pred)
 prec = precision_score(
@@ -324,7 +405,7 @@ print(f"Precision (macro) : {prec:.4f}")
 print(f"Recall  (macro)   : {rec:.4f}")
 print(f"F1-score (macro)  : {f1:.4f}")
 
-# Classification report (per true class)
+# Classification report
 report_txt = classification_report(
     y_true, y_pred,
     labels=class_names,
@@ -343,7 +424,7 @@ report_dict = classification_report(
 )
 pd.DataFrame(report_dict).transpose().to_csv(OUT_REPORT_CSV)
 
-# Summary JSON
+# JSON summary
 summary = {
     "num_classes": len(class_names),
     "classes": class_names,
@@ -357,8 +438,8 @@ summary = {
 with open(OUT_SUMMARY_JSON, "w") as f:
     json.dump(summary, f, indent=2)
 
-# ===================== PLOT ===============================
-plot_ostium_confusion_with_recall(
+# ===================== PLOT (USING CM NORM) ===============
+plot_ostium_confusion_with_recall_cm(
     cm_norm=cm_norm,
     filename=OUT_PNG
 )

@@ -1,19 +1,16 @@
 {
-  "num_classes": 8,
+  "num_classes": 5,
   "classes": [
-    "Not visible in ",
-    "curled",
-    "markedly",
-    "much longer tha",
-    "slightly",
-    "straight",
-    "strongly",
-    "undifferentiate"
+    "TC-MARKCURV_",
+    "TC-SLIGHTCURV_",
+    "TC-STRIGHT_",
+    "TC-STRONGCURV_",
+    "UNDIFFERENTIATED_"
   ],
   "metrics": {
     "accuracy_top1": 0.645083932853717,
-    "precision_macro": 0.47456522116554883,
-    "recall_macro": 0.35463423147223283,
-    "f1_macro": 0.3458452542922524
+    "precision_macro": 0.7593043538648782,
+    "recall_macro": 0.5674147703555724,
+    "f1_macro": 0.5533524068676038
   }
 }

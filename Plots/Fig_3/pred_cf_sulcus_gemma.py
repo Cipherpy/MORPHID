@@ -135,9 +135,9 @@ def plot_sulcus_confusion_with_recall_cm(
 ):
     """
     Plot confusion matrix using an already row-normalized crosstab (cm_norm):
-    - cm_norm.index  = reference (true) labels (NO HALLUCINATE)
+    - cm_norm.index   = reference (true) labels (NO HALLUCINATE)
     - cm_norm.columns = predicted labels (can include HALLUCINATE)
-    - Values = [0,1], row-normalized
+    - Values          = [0,1], row-normalized
 
     Right side: horizontal bars showing per-row recall (diagonal value where
     the same label exists as a predicted column; 0 otherwise).
@@ -168,11 +168,14 @@ def plot_sulcus_confusion_with_recall_cm(
         vmax = 1.0
     vmin = 0.001
 
+    # --- FIGURE SIZE: still adaptive but consistent ---
     fig_w = max(8.0, 0.25 * n_cols + 4)
     fig_h = max(6.0, 0.25 * n_rows + 2)
 
     fig = plt.figure(figsize=(fig_w, fig_h), dpi=dpi)
     gs = fig.add_gridspec(1, 2, width_ratios=[10, 1], wspace=0.02)
+
+    # ================== MAIN CONFUSION MATRIX ==================
     ax = fig.add_subplot(gs[0, 0])
 
     cm_masked = np.ma.masked_array(vals, mask=zero_mask)
@@ -183,7 +186,8 @@ def plot_sulcus_confusion_with_recall_cm(
         cmap=cmap,
         vmin=vmin * 100,
         vmax=vmax * 100,
-        extent=(-0.5, n_cols - 0.5, n_rows - 0.5, -0.5)
+        extent=(-0.5, n_cols - 0.5, n_rows - 0.5, -0.5),
+        aspect="auto"
     )
 
     # Ticks & labels (x on top)
@@ -194,15 +198,39 @@ def plot_sulcus_confusion_with_recall_cm(
 
     ax.xaxis.set_ticks_position('top')
     ax.xaxis.set_label_position('top')
-    ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
+    ax.tick_params(
+        axis='x',
+        which='major',
+        top=True,
+        bottom=False,
+        labeltop=True,
+        labelbottom=False,
+        length=0
+    )
+    ax.tick_params(
+        axis='y',
+        which='major',
+        left=True,
+        right=False,
+        length=0
+    )
+    ax.set_title("Generated features", fontsize=10, pad=6)
+    ax.set_ylabel("Reference features", fontsize=10)
 
-    # ax.set_title("Generated features", fontsize=10, pad=6)
-    # ax.set_ylabel("Reference features", fontsize=10)
+    # Explicitly lock y-limits so each row is exactly 1 unit high
+    ax.set_ylim(n_rows - 0.5, -0.5)
 
-    # Minor gridlines
+    # Minor gridlines (cell boundaries only)
     ax.set_xticks(np.arange(-.5, n_cols, 1), minor=True)
     ax.set_yticks(np.arange(-.5, n_rows, 1), minor=True)
-    ax.tick_params(which="minor", bottom=False, left=False)
+    ax.tick_params(
+        which="minor",
+        bottom=False,
+        left=False,
+        top=False,
+        right=False,
+        length=0
+    )
     for spine in ax.spines.values():
         spine.set_visible(False)
 
@@ -223,33 +251,46 @@ def plot_sulcus_confusion_with_recall_cm(
                     fontsize=7, color=color
                 )
 
-    # Right-side recall bars
-    ax_bar = fig.add_subplot(gs[0, 1], sharey=ax)
+    # ================== RIGHT-SIDE RECALL BARS ==================
+    # NOTE: no sharey; we manually match the y-limits so it works
+    # for any number of rows (5, 9, etc.)
+    ax_bar = fig.add_subplot(gs[0, 1])
+
+    # y-positions that match the centers of the CM rows
+    y_pos = np.arange(n_rows)
+
+    # Background bar (1.0)
     ax_bar.barh(
-        np.arange(n_rows),
+        y_pos,
         [1.0] * n_rows,
-        height=0.2,
+        height=0.2,               # ~cell height; works for any n_rows
         color="#e5e7eb",
         edgecolor="none"
     )
+    # Foreground recall bar
     ax_bar.barh(
-        np.arange(n_rows),
+        y_pos,
         recalls,
         height=0.2,
         color="#1d678f",
         edgecolor="none"
     )
 
-    for i, val in enumerate(recalls):
+    # Numeric recall labels (centered on each row)
+    for y, val in zip(y_pos, recalls):
         ax_bar.text(
-            0.02, i - 0.20,
+            0.02, y-0.20,
             f"{val:.2f}",
-            va="bottom", ha="left",
+            va="center", ha="left",
             fontsize=7,
             color="#1e293b"
         )
 
     ax_bar.set_xlim(0, 1.05)
+
+    # Match y-limits to main axis → guaranteed alignment
+    ax_bar.set_ylim(n_rows - 0.5, -0.5)
+
     ax_bar.yaxis.set_visible(False)
     ax_bar.set_xticks([0, 0.5, 1.0])
     ax_bar.set_xticklabels(["0", "0.5", "1"], fontsize=7, color="#1e293b")
@@ -258,8 +299,9 @@ def plot_sulcus_confusion_with_recall_cm(
         ax_bar.spines[spine].set_visible(False)
 
     plt.tight_layout(pad=1.2)
-    plt.savefig(filename, bbox_inches="tight", dpi=dpi, transparent=True)
+    plt.savefig(filename, bbox_inches="tight", dpi=dpi)
     plt.close(fig)
+
 
 # ===================== LOAD & PREP ========================
 os.makedirs(OUT_DIR, exist_ok=True)

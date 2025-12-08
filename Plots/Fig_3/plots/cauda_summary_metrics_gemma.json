@@ -1,19 +1,17 @@
 {
-  "num_classes": 8,
+  "num_classes": 6,
   "classes": [
-    "tubular, curled curved",
-    "tubular, markedly curved",
-    "tubular, round to irregular, sinuate dorsal and crenate ventral margins",
-    "tubular, slightly curved",
-    "tubular, slightly to strongly curved",
-    "tubular, straight",
-    "tubular, strongly curved",
-    "undifferentiated"
+    "TC-MARKCURV_",
+    "TC-SLIGHTCURV_",
+    "TC-SLIGHTTOSTRONGCURV_",
+    "TC-STRIGHT_",
+    "TC-STRONGCURV_",
+    "UNDIFFERENTIATED_"
   ],
   "metrics": {
     "accuracy_top1": 0.7320419693301049,
-    "precision_macro": 0.636512375439251,
-    "recall_macro": 0.5222239051772186,
-    "f1_macro": 0.550901541342907
+    "precision_macro": 0.8486831672523348,
+    "recall_macro": 0.6962985402362915,
+    "f1_macro": 0.7345353884572096
   }
 }

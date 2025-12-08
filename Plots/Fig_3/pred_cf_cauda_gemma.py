@@ -6,14 +6,17 @@ Cauda feature evaluation & confusion matrix (Gemma)
 
 Preprocessing:
 - Extract 'Cauda:' text from GT and generated captions
-- Clean feature labels (remove 'tubular', trailing 'curved', leading commas, limit length)
+- Map to fixed short labels via LABEL_MAP
 - Build crosstab and row-normalize (saved as CSV)
 
 New:
+- Ignore 'HALLUCINATE' in reference (ground-truth) features:
+  it can appear only in generated features (prediction columns, not rows).
 - Compute classification metrics (accuracy, precision, recall, F1, classification report)
-  using the cleaned label pairs.
+  using the short label pairs (excluding HALLUCINATE from true labels).
 - Plot a pastel blue–green confusion matrix with per-class recall bars
-  (row-normalized via sklearn.confusion_matrix), saved to OUT_PNG.
+  (row-normalized), saved to OUT_PNG, using the asymmetric crosstab
+  (rows = true labels, cols = predicted labels, incl. HALLUCINATE).
 """
 
 import os
@@ -26,7 +29,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
 from sklearn.metrics import (
-    classification_report, confusion_matrix, accuracy_score,
+    classification_report, accuracy_score,
     precision_score, recall_score, f1_score
 )
 
@@ -63,45 +66,42 @@ def extract_raw_cauda(text: str) -> str:
     m = re.search(r"Cauda:\s*([^\.]*)", str(text), flags=re.IGNORECASE)
     return m.group(1).strip() if m else ""
 
+# Short cauda labels (same scheme as sulcus)
+LABEL_MAP = {
+    "tubular, strongly curved":              "TC-STRONGCURV_",
+    "tubular, slightly curved":         "TC-SLIGHTCURV_",
+    "tubular, straight":               "TC-STRIGHT_",
+    "tubular, markedly curved":           "TC-MARKCURV_",
+    "undifferentiated":        "UNDIFFERENTIATED_",
+    "tubular, slightly to strongly curved": "TC-SLIGHTTOSTRONGCURV_",
+    "tubular, curled curved": "TC-CURLCURVED_",
+    "not visible":"NOTVISIBLE_",
+    # hallucinated / wrong feature:
+    "tubular, round to irregular, sinuate dorsal and crenate ventral margins": "HALLUCINATE_",
+}
 
-def clean_feature_label(s: str) -> str:
+def to_short_label(raw: str) -> str:
     """
-    Clean cauda feature phrases for modeling & plotting:
-    - remove 'tubular' (and its following comma/space)
-    - remove trailing 'curved'
-    - remove leading commas / punctuation
-    - normalize spaces
-    - trim to max 15 characters
+    Convert raw cauda description to short code:
+    - use LABEL_MAP if available
+    - otherwise truncate cleaned raw text to max 11 characters
     """
-    if pd.isna(s):
+    if pd.isna(raw):
         return ""
-    s = str(s).strip()
-
-    # remove 'tubular' (case-insensitive) and optional following comma/space
-    s = re.sub(r'\b[Tt]ubular\b,?\s*', '', s)
-
-    # remove trailing 'curved' (e.g. 'strongly curved' -> 'strongly')
-    s = re.sub(r'\s*[Cc]urved\.?$', '', s)
-
-    # remove leading commas / punctuation
-    s = s.lstrip(",;:- ").strip()
-
-    # normalize spaces
-    s = re.sub(r'\s+', ' ', s).strip()
-
-    # limit character length
-    if len(s) > 15:
-        s = s[:15]
-
-    return s
-
+    raw = str(raw).strip()
+    if raw in LABEL_MAP:
+        return LABEL_MAP[raw]
+    # fallback: remove commas, collapse spaces, truncate
+    tmp = re.sub(r"[,\s]+", " ", raw).strip()
+    if len(tmp) > 11:
+        tmp = tmp[:11]
+    return tmp
 
 def row_normalize(df_counts: pd.DataFrame) -> pd.DataFrame:
     """Row-normalize a count matrix to [0,1]."""
     with np.errstate(invalid="ignore", divide="ignore"):
         norm = df_counts.div(df_counts.sum(axis=1).replace(0, np.nan), axis=0)
     return norm.fillna(0.0)
-
 
 def pastel_bluegreen_cmap():
     """Pastel blue–green colormap (same style as ostium / sulcus)."""
@@ -121,139 +121,178 @@ def pastel_bluegreen_cmap():
     cmap.set_under("#ffffff")
     return cmap
 
-
-def plot_cauda_confusion_with_recall(
-    y_true,
-    y_pred,
-    class_names,
-    filename,
-    dpi=1500
+def plot_cauda_confusion_with_recall_cm(
+    cm_norm: pd.DataFrame,
+    filename: str,
+    dpi: int = 1500
 ):
     """
-    Pastel blue–green confusion matrix with per-class recall bars.
-    - Rows = reference (true) cauda features
-    - Cols = generated (predicted) cauda features
-    - Values = row-normalized (%)
-    - Right side: horizontal bars showing recall (diagonal / row total)
+    Plot confusion matrix using an already row-normalized crosstab (cm_norm):
+    - cm_norm.index   = reference (true) labels (NO HALLUCINATE)
+    - cm_norm.columns = predicted labels (can include HALLUCINATE)
+    - Values          = [0,1], row-normalized
+
+    Right side: horizontal bars showing per-row recall (diagonal value where
+    the same label exists as a predicted column; 0 otherwise).
     """
+    rows = list(cm_norm.index)
+    cols = list(cm_norm.columns)
+    vals = cm_norm.values
 
-    # Confusion matrix normalized by true label (row-normalized)
-    cm = confusion_matrix(
-        y_true,
-        y_pred,
-        labels=class_names,
-        normalize="true"
-    )
-
-    # Per-class recall = diagonal of row-normalized CM
-    recalls = np.diag(cm)
-
-    zero_mask = (cm == 0.0)
-    cm_masked = np.ma.masked_array(cm, mask=zero_mask)
-
+    n_rows, n_cols = vals.shape
     cmap = pastel_bluegreen_cmap()
-    n_classes = len(class_names)
 
-    # Scale figure with number of classes
-    fig_w = max(8.0, 0.25 * n_classes + 4)
-    fig_h = max(6.0, 0.25 * n_classes + 2)
+    # Per-row recall from diagonal where possible
+    recalls = []
+    for i, rlab in enumerate(rows):
+        if rlab in cols:
+            j = cols.index(rlab)
+            recalls.append(vals[i, j])
+        else:
+            recalls.append(0.0)
+    recalls = np.array(recalls)
 
-    fig = plt.figure(figsize=(fig_w, fig_h), dpi=dpi)
-    gs = fig.add_gridspec(1, 2, width_ratios=[10, 1], wspace=0.02)
-    ax = fig.add_subplot(gs[0, 0])
-
-    # choose vmax based on non-zero cells
-    if np.any(~zero_mask):
-        vmax = np.percentile(cm[~zero_mask], 98)
-        vmax = max(vmax, 0.1)
+    # For color scaling, ignore exact zeros
+    zero_mask = (vals == 0.0)
+    nonzero_vals = vals[~zero_mask]
+    if nonzero_vals.size > 0:
+        vmax = max(np.percentile(nonzero_vals, 98), 0.1)
     else:
         vmax = 1.0
     vmin = 0.001
 
-    # Show as percent
+    # --- FIGURE SIZE: still adaptive but consistent ---
+    fig_w = max(8.0, 0.25 * n_cols + 4)
+    fig_h = max(6.0, 0.25 * n_rows + 2)
+
+    fig = plt.figure(figsize=(fig_w, fig_h), dpi=dpi)
+    gs = fig.add_gridspec(1, 2, width_ratios=[10, 1], wspace=0.02)
+
+    # ================== MAIN CONFUSION MATRIX ==================
+    ax = fig.add_subplot(gs[0, 0])
+
+    cm_masked = np.ma.masked_array(vals, mask=zero_mask)
+
     im = ax.imshow(
         cm_masked * 100,
         interpolation="nearest",
         cmap=cmap,
         vmin=vmin * 100,
         vmax=vmax * 100,
-        extent=(-0.5, n_classes - 0.5, n_classes - 0.5, -0.5)
+        extent=(-0.5, n_cols - 0.5, n_rows - 0.5, -0.5),
+        aspect="auto"
     )
 
     # Ticks & labels (x on top)
-    ax.set_xticks(np.arange(n_classes))
-    ax.set_yticks(np.arange(n_classes))
-    ax.set_xticklabels(class_names, rotation=90, fontsize=7)
-    ax.set_yticklabels(class_names, fontsize=7)
+    ax.set_xticks(np.arange(n_cols))
+    ax.set_yticks(np.arange(n_rows))
+    ax.set_xticklabels(cols, rotation=90, fontsize=8)
+    ax.set_yticklabels(rows, fontsize=8)
 
     ax.xaxis.set_ticks_position('top')
     ax.xaxis.set_label_position('top')
-    ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
+    ax.tick_params(
+        axis='x',
+        which='major',
+        top=True,
+        bottom=False,
+        labeltop=True,
+        labelbottom=False,
+        length=0
+    )
+    ax.tick_params(
+        axis='y',
+        which='major',
+        left=True,
+        right=False,
+        length=0
+    )
+    # ax.set_title("Generated features", fontsize=10, pad=6)
+    # ax.set_ylabel("Reference features", fontsize=10)
 
-    ax.set_title("Generated cauda features", fontsize=9, pad=6)
-    ax.set_ylabel("Reference cauda features", fontsize=9)
+    # Explicitly lock y-limits so each row is exactly 1 unit high
+    ax.set_ylim(n_rows - 0.5, -0.5)
 
-    # Minor gridlines
-    ax.set_xticks(np.arange(-.5, n_classes, 1), minor=True)
-    ax.set_yticks(np.arange(-.5, n_classes, 1), minor=True)
-    ax.tick_params(which="minor", bottom=False, left=False)
+    # Minor gridlines (cell boundaries only)
+    ax.set_xticks(np.arange(-.5, n_cols, 1), minor=True)
+    ax.set_yticks(np.arange(-.5, n_rows, 1), minor=True)
+    ax.tick_params(
+        which="minor",
+        bottom=False,
+        left=False,
+        top=False,
+        right=False,
+        length=0
+    )
     for spine in ax.spines.values():
         spine.set_visible(False)
 
     # Annotate non-zero cells
-    if np.any(~zero_mask):
-        max_val = np.nanmax(cm)
+    if nonzero_vals.size > 0:
+        max_val = float(np.nanmax(nonzero_vals))
     else:
         max_val = 0.0
     thr = 0.6 * max_val
 
-    for i in range(n_classes):
-        for j in range(n_classes):
-            if cm[i, j] > 0:
-                color = "white" if cm[i, j] > thr else "black"
+    for i in range(n_rows):
+        for j in range(n_cols):
+            if vals[i, j] > 0:
+                color = "white" if vals[i, j] > thr else "black"
                 ax.text(
-                    j, i, f"{cm[i, j] * 100:.1f}%",
+                    j, i, f"{vals[i, j] * 100:.1f}%",
                     ha="center", va="center",
-                    fontsize=6.5, color=color
+                    fontsize=7, color=color
                 )
 
-    # Right-side recall bars
-    ax_bar = fig.add_subplot(gs[0, 1], sharey=ax)
+    # ================== RIGHT-SIDE RECALL BARS ==================
+    # NOTE: no sharey; we manually match the y-limits so it works
+    # for any number of rows (5, 9, etc.)
+    ax_bar = fig.add_subplot(gs[0, 1])
+
+    # y-positions that match the centers of the CM rows
+    y_pos = np.arange(n_rows)
+
+    # Background bar (1.0)
     ax_bar.barh(
-        np.arange(n_classes),
-        [1.0] * n_classes,
-        height=0.2,
+        y_pos,
+        [1.0] * n_rows,
+        height=0.2,               # ~cell height; works for any n_rows
         color="#e5e7eb",
         edgecolor="none"
     )
+    # Foreground recall bar
     ax_bar.barh(
-        np.arange(n_classes),
+        y_pos,
         recalls,
         height=0.2,
         color="#1d678f",
         edgecolor="none"
     )
 
-    for i, val in enumerate(recalls):
+    # Numeric recall labels (centered on each row)
+    for y, val in zip(y_pos, recalls):
         ax_bar.text(
-            0.02, i - 0.20,
+            0.02, y-0.20,
             f"{val:.2f}",
-            va="bottom", ha="left",
-            fontsize=6.5,
+            va="center", ha="left",
+            fontsize=7,
             color="#1e293b"
         )
 
     ax_bar.set_xlim(0, 1.05)
+
+    # Match y-limits to main axis → guaranteed alignment
+    ax_bar.set_ylim(n_rows - 0.5, -0.5)
+
     ax_bar.yaxis.set_visible(False)
     ax_bar.set_xticks([0, 0.5, 1.0])
     ax_bar.set_xticklabels(["0", "0.5", "1"], fontsize=7, color="#1e293b")
     ax_bar.set_xlabel("Recall", fontsize=8, color="#1e293b")
     for spine in ["top", "right", "bottom", "left"]:
-        spine_obj = ax_bar.spines[spine]
-        spine_obj.set_visible(False)
+        ax_bar.spines[spine].set_visible(False)
 
     plt.tight_layout(pad=1.2)
-    plt.savefig(filename, bbox_inches="tight", dpi=dpi, transparent=True)
+    plt.savefig(filename, bbox_inches="tight", dpi=dpi)
     plt.close(fig)
 
 
@@ -271,17 +310,24 @@ filtered = df[
     (df["cauda_gen_raw"] != "")
 ].copy()
 
-# Clean labels (remove 'tubular', trailing 'curved', leading comma, etc.)
-filtered["cauda_gt_label"]  = filtered["cauda_gt_raw"].apply(clean_feature_label)
-filtered["cauda_gen_label"] = filtered["cauda_gen_raw"].apply(clean_feature_label)
+# Map to short labels
+filtered["cauda_gt_label"]  = filtered["cauda_gt_raw"].apply(to_short_label)
+filtered["cauda_gen_label"] = filtered["cauda_gen_raw"].apply(to_short_label)
 
-# Drop rows that became empty after cleaning
+# Drop rows that became empty after mapping
 filtered = filtered[
     (filtered["cauda_gt_label"]  != "") &
     (filtered["cauda_gen_label"] != "")
 ].copy()
 
-# Crosstab (counts) on cleaned labels (for CSV)
+# ===== Ignore hallucinated GT labels =====
+IGNORE_REF = {"HALLUCINATE"}
+before = len(filtered)
+filtered = filtered[~filtered["cauda_gt_label"].isin(IGNORE_REF)].copy()
+after = len(filtered)
+print(f"Removed {before - after} rows with hallucinated cauda reference labels.")
+
+# Crosstab (counts) using the short labels
 cm_counts = pd.crosstab(
     filtered["cauda_gt_label"],
     filtered["cauda_gen_label"],
@@ -293,29 +339,40 @@ row_order = cm_counts.sum(axis=1).sort_values(ascending=False).index.tolist()
 col_order = cm_counts.sum(axis=0).sort_values(ascending=False).index.tolist()
 cm_counts = cm_counts.loc[row_order, col_order]
 
-# Row-normalized crosstab (for CSV output)
+# Row-normalized matrix for plotting
 cm_norm = row_normalize(cm_counts)
 cm_norm.to_csv(OUT_NORM_CSV, index=True)
 
-# ===================== METRICS ======================
+rows = cm_norm.index.tolist()
+cols = cm_norm.columns.tolist()
+vals = cm_norm.values
+
+# ===================== METRICS ============================
+# Use the short-label pairs to compute metrics (excluding HALLUCINATE in GT)
 y_true = filtered["cauda_gt_label"].values
 y_pred = filtered["cauda_gen_label"].values
 
-# Class names = sorted union of labels present in true or predicted
-class_names = sorted(list(set(y_true) | set(y_pred)))
+# Class names = unique true labels only (no HALLUCINATE)
+class_names = sorted(list(pd.unique(y_true)))
 
 acc  = accuracy_score(y_true, y_pred)
-prec = precision_score(y_true, y_pred, labels=class_names,
-                       average="macro", zero_division=0)
-rec  = recall_score(y_true, y_pred, labels=class_names,
-                    average="macro", zero_division=0)
-f1   = f1_score(y_true, y_pred, labels=class_names,
-                average="macro", zero_division=0)
+prec = precision_score(
+    y_true, y_pred, labels=class_names,
+    average="macro", zero_division=0
+)
+rec  = recall_score(
+    y_true, y_pred, labels=class_names,
+    average="macro", zero_division=0
+)
+f1   = f1_score(
+    y_true, y_pred, labels=class_names,
+    average="macro", zero_division=0
+)
 
 print("\n=== Cauda Feature Metrics (Gemma) ===")
 print(f"Top-1 Accuracy    : {acc:.4f}")
 print(f"Precision (macro) : {prec:.4f}")
-print(f"Recall (macro)    : {rec:.4f}")
+print(f"Recall  (macro)   : {rec:.4f}")
 print(f"F1-score (macro)  : {f1:.4f}")
 
 # Classification report
@@ -351,17 +408,15 @@ summary = {
 with open(OUT_SUMMARY_JSON, "w") as f:
     json.dump(summary, f, indent=2)
 
-# ===================== PLOT =======================
-plot_cauda_confusion_with_recall(
-    y_true=y_true,
-    y_pred=y_pred,
-    class_names=class_names,
+# ===================== PLOT (USING CM NORM) ===============
+plot_cauda_confusion_with_recall_cm(
+    cm_norm=cm_norm,
     filename=OUT_PNG
 )
 
 print(
     f"Saved:\n"
-    f"- Normalized CM (crosstab, row-normalized): {OUT_NORM_CSV}\n"
+    f"- Normalized CM: {OUT_NORM_CSV}\n"
     f"- Confusion matrix figure: {OUT_PNG}\n"
     f"- Classification report TXT: {OUT_REPORT_TXT}\n"
     f"- Classification report CSV: {OUT_REPORT_CSV}\n"
