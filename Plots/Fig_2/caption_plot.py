@@ -28,7 +28,7 @@ mpl.rcParams.update({
 })
 
 # ───────────── Inputs ─────────────
-CSV_FILE = "/home/reshma/MORPHID/Plots/Fig_2/caption_scores_llama.csv"
+CSV_FILE = "/home/reshma/MORPHID/Plots/Fig_2/Grayscale_llama_captions_scores.csv"
 LABEL_COL = "actual_label"
 METRICS   = ["BLEU-1", "BLEU-2", "BLEU-3", "BLEU-4", "ROUGE-L"]
 OUTDIR    = "fig_species_scores"
@@ -52,7 +52,7 @@ def italicize_taxon(name: str) -> str:
         return r"$\it{" + txt + r"}$"
 
 # save the species × metric mean table
-species_stats.to_csv(os.path.join(OUTDIR, "species_scores_matrix.csv"), float_format="%.4f")
+species_stats.to_csv(os.path.join(OUTDIR, "grayscale_llama_species_scores_matrix.csv"), float_format="%.4f")
 
 # ───────────── Option A: Clustered heatmap ─────────────
 # Normalize per-metric for clustering (z-score), but annotate with real values.
@@ -86,7 +86,7 @@ ax.set_xlabel("Metric", labelpad=4)
 ax.set_ylabel("Species name", labelpad=4)
 # cg.fig.suptitle("A  |  Species-wise caption scores (clustered by profile)", x=0.0, y=1.02, ha="left", fontsize=7)
 cg.fig.tight_layout()
-cg.fig.savefig(os.path.join(OUTDIR, "llama_A_clustered_heatmap.png"), bbox_inches="tight",transparent=True)
+cg.fig.savefig(os.path.join(OUTDIR, "grayscale_llama_A_clustered_heatmap.png"), bbox_inches="tight",transparent=True)
 cg.fig.savefig(os.path.join(OUTDIR, "llama_A_clustered_heatmap.pdf"), transparent=True, bbox_inches="tight")
 
 
