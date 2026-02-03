@@ -1,0 +1,13 @@
+file,model,feature
+shape_cer_gemma.csv,Gemma-3,Shape
+ostium_cer_gemma.csv,Gemma-3,Ostium
+cauda_cer_gemma.csv,Gemma-3,Cauda
+sulcus_cer_gemma.csv,Gemma-3,Sulcus acusticus
+anterior_cer_gemma.csv,Gemma-3,Anterior region
+posterior_cer_gemma.csv,Gemma-3,Posterior region
+shape_cer_llama.csv,LLaMA-3.2 Vision,Shape
+ostium_cer_llama.csv,LLaMA-3.2 Vision,Ostium
+cauda_cer_llama.csv,LLaMA-3.2 Vision,Cauda
+sulcus_cer_llama.csv,LLaMA-3.2 Vision,Sulcus acusticus
+anterior_cer_llama.csv,LLaMA-3.2 Vision,Anterior region
+posterior_cer_llama.csv,LLaMA-3.2 Vision,Posterior region

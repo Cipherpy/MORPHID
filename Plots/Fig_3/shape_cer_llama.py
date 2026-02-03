@@ -10,16 +10,16 @@ def extract_raw_sulcus_acusticus(text):
     """Extract the exact raw text after 'Sulcus acusticus:' up to the next period or end."""
     if pd.isna(text):
         return ""
-    m = re.search(r'Cauda:\s*([^\.]*)', str(text), flags=re.IGNORECASE)
+    m = re.search(r'Shape:\s*([^\.]*)', str(text), flags=re.IGNORECASE)
     return m.group(1).strip() if m else ""
 
 # ---- load & prep
 df = pd.read_csv("/home/reshma/MORPHID/Captioning/Outputs/output_filtered.csv")
 
-df["cauda_gt_raw"]  = df["Description"].apply(extract_raw_sulcus_acusticus)
-df["cauda_gen_raw"] = df["generated_caption"].apply(extract_raw_sulcus_acusticus)
+df["shape_gt_raw"]  = df["Description"].apply(extract_raw_sulcus_acusticus)
+df["shape_gen_raw"] = df["generated_caption"].apply(extract_raw_sulcus_acusticus)
 
-filtered = df[(df["cauda_gt_raw"] != "") & (df["cauda_gen_raw"] != "")]
+filtered = df[(df["shape_gt_raw"] != "") & (df["shape_gen_raw"] != "")]
 
 # ------------------- CER CALCULATION -------------------
 import Levenshtein
@@ -36,11 +36,11 @@ def cer(reference: str, hypothesis: str) -> float:
 
 # Apply CER row-wise
 filtered["CER"] = filtered.apply(
-    lambda row: cer(row["cauda_gt_raw"], row["cauda_gen_raw"]), axis=1
+    lambda row: cer(row["shape_gt_raw"], row["shape_gen_raw"]), axis=1
 )
 
 # ------------------- SAVE RESULTS TO CSV -------------------
-OUT_CSV = "/home/reshma/MORPHID/Plots/Fig_3/cauda_cer_llama.csv"
+OUT_CSV = "/home/reshma/MORPHID/Plots/Fig_3/shape_cer_llama.csv"
 
 filtered.to_csv(OUT_CSV, index=False)
 
@@ -50,7 +50,7 @@ print(f"\nSaved CER results to: {OUT_CSV}\n")
 print("Mean CER:", filtered["CER"].mean())
 print("Median CER:", filtered["CER"].median())
 print("\nSample rows with CER:\n", 
-      filtered[["cauda_gt_raw", "cauda_gen_raw", "CER"]].head())
+      filtered[["shape_gt_raw", "shape_gen_raw", "CER"]].head())
 
 # ------------------- OPTIONAL: DISTRIBUTION PLOT -------------------
 plt.figure(figsize=(6,4))
